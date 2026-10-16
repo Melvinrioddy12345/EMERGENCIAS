@@ -3,206 +3,211 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Alertas de Emergencia – Prototipo offline</title>
-<!-- Leaflet: única dependencia externa. Si no carga, la app sigue funcionando con lista alternativa. -->
+<title>RedOffline – Emergencias sin Internet</title>
+<!-- Leaflet: única dependencia externa. Si no carga, la app sigue funcionando sin mapa. -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" onerror="window.__leafletFailed=true">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="" onerror="window.__leafletFailed=true"></script>
 <style>
-:root{
-  --bg:#0f172a; --panel:#1a2332; --border:#334155; --text:#e2e8f0; --muted:#94a3b8;
-  --accent:#38bdf8; --crit:#ef4444; --high:#f97316; --mod:#64748b; --ok:#22c55e;
-}
+:root{--bg:#0f172a;--panel:#1a2332;--border:#334155;--text:#f1f5f9;--muted:#94a3b8;--accent:#38bdf8;
+  --red:#ef4444;--yellow:#eab308;--green:#22c55e;--blue:#0ea5e9}
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%}
 body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.4;-webkit-tap-highlight-color:transparent}
 header{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 16px;background:rgba(15,23,42,.95);border-bottom:1px solid var(--border)}
-header h1{font-size:1.05rem;font-weight:700;letter-spacing:.2px}
-.conn{display:flex;align-items:center;gap:8px;font-size:.8rem;color:var(--muted);text-align:right}
-.conn .dot{width:10px;height:10px;border-radius:50%;background:var(--mod);flex:none}
-.conn .long{display:inline}
-.conn .short{display:none}
-main{max-width:1000px;margin:0 auto;padding:16px 16px 110px}
-.view{display:none}
-.view.active{display:block;animation:fade .25s ease}
+header h1{font-size:1.1rem;font-weight:800}
+.conn{font-size:.78rem;color:var(--muted);display:flex;gap:10px;align-items:center}
+.conn i{display:inline-block;width:9px;height:9px;border-radius:50%;background:#64748b;margin-right:4px}
+.conn i.on{background:var(--green)}
+main{max-width:1000px;margin:0 auto;padding:14px 16px 110px}
+.view{display:none}.view.active{display:block;animation:fade .25s ease}
 @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
-.notice{background:var(--panel);border:1px solid var(--border);border-left:4px solid var(--accent);border-radius:10px;padding:10px 12px;font-size:.82rem;color:var(--muted);margin-bottom:14px}
-.notice.warn{border-left-color:var(--high)}
-.notice b{color:var(--text)}
+.notice{background:var(--panel);border:1px solid var(--border);border-left:4px solid var(--accent);border-radius:10px;padding:10px 12px;font-size:.82rem;color:var(--muted);margin-bottom:12px}
+.notice.warn{border-left-color:#f97316}.notice b{color:var(--text)}
+details.notice summary{cursor:pointer;color:var(--text);font-weight:600}
+details.notice p{margin-top:8px}
+h2{font-size:.95rem;color:var(--muted);margin:16px 0 8px;font-weight:600}
 
-/* Botones fantasma circulares (solo icono) */
-.ghost{width:52px;height:52px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:1.5rem;color:var(--text);background:rgba(148,163,184,.08);border:1px solid rgba(148,163,184,.35);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);cursor:pointer;transition:all .2s}
+.ghost{width:48px;height:48px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:1.4rem;color:var(--text);background:rgba(148,163,184,.08);border:1px solid rgba(148,163,184,.35);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);cursor:pointer;transition:all .2s}
 .ghost:hover{background:rgba(148,163,184,.18)}
 .ghost.active{border-color:var(--accent);box-shadow:0 0 14px rgba(56,189,248,.55);background:rgba(56,189,248,.12)}
-.ghost.sm{width:44px;height:44px;font-size:1.2rem}
-.ghost:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.subtabs{display:flex;gap:12px;justify-content:center;margin-bottom:16px}
-
-/* Dock inferior */
-#dock{position:fixed;left:0;right:0;bottom:calc(12px + env(safe-area-inset-bottom));display:flex;justify-content:center;gap:22px;pointer-events:none;background:transparent;z-index:30}
-#dock .ghost{pointer-events:auto;width:56px;height:56px;font-size:1.7rem;background:rgba(15,23,42,.45)}
-
-/* Rejilla de alertas */
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
-.kw{min-height:104px;border:0;border-radius:14px;color:#fff;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:12px;font-size:1.1rem;font-weight:700;text-align:center;box-shadow:0 2px 6px rgba(0,0,0,.35);transition:transform .12s,filter .15s}
-.kw .ic{font-size:2.2rem;line-height:1}
-.kw:hover{filter:brightness(1.12)}
-.kw:active{transform:scale(.96)}
-.kw:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
-.kw.critical{background:linear-gradient(145deg,#ef4444,#7f1d1d)}
-.kw.high{background:linear-gradient(145deg,#f97316,#9a3412)}
-.kw.moderate{background:linear-gradient(145deg,#64748b,#334155)}
-#feedback{margin-top:16px;text-align:center;color:var(--muted);font-size:.95rem;min-height:1.5em}
-#feedback.ok{color:var(--ok)}
-
-/* Controles de reportes */
-.controls{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
-.controls input,.controls select{background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:.95rem;min-height:44px}
-.controls input{flex:1 1 180px}
-.list{display:flex;flex-direction:column;gap:10px}
-.item{display:flex;gap:12px;align-items:flex-start;background:var(--panel);border:1px solid var(--border);border-left:5px solid var(--mod);border-radius:12px;padding:12px}
-.item.critical{border-left-color:var(--crit)} .item.high{border-left-color:var(--high)} .item.moderate{border-left-color:var(--mod)}
-.item.expired{opacity:.55}
-.item .ic{font-size:1.8rem}
-.item .body{flex:1;min-width:0}
-.item .title{font-weight:700;font-size:1.02rem}
-.item .content{color:var(--text);font-size:.9rem;margin-top:2px;word-wrap:break-word}
-.item .meta{color:var(--muted);font-size:.78rem;margin-top:4px}
-.badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
-.badge{font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:999px;border:1px solid var(--border);color:var(--text);text-transform:uppercase;letter-spacing:.3px}
-.badge.critical{background:var(--crit);border-color:var(--crit)}
-.badge.high{background:var(--high);border-color:var(--high)}
-.badge.moderate{background:var(--mod);border-color:var(--mod)}
-.badge.demo{background:#a855f7;border-color:#a855f7}
-.badge.status{color:var(--accent);border-color:var(--accent)}
-.empty{text-align:center;color:var(--muted);padding:28px 10px;border:1px dashed var(--border);border-radius:12px}
-
-/* Resumen */
-.stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:14px}
-.stat{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:12px;text-align:center}
-.stat .ic{font-size:1.6rem}
-.stat .v{font-size:1.4rem;font-weight:800;margin-top:2px}
-.stat .l{font-size:.72rem;color:var(--muted)}
-.toolbar{display:flex;gap:12px;justify-content:center;margin:6px 0 16px}
-h2{font-size:.95rem;color:var(--muted);margin:14px 0 8px;font-weight:600}
+.ghost:disabled{opacity:.35;cursor:not-allowed}
+.ghost:focus-visible,.big:focus-visible,.btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#dock{position:fixed;left:0;right:0;bottom:calc(12px + env(safe-area-inset-bottom));display:flex;justify-content:center;gap:22px;pointer-events:none;z-index:30}
+#dock .ghost{pointer-events:auto;width:56px;height:56px;font-size:1.7rem;background:rgba(15,23,42,.5)}
 
 /* Mapa */
-#map{height:55vh;min-height:320px;border-radius:12px;border:1px solid var(--border);background:var(--panel)}
+.toolbar{display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+#toolPanel{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:10px;margin-bottom:10px}
+#toolPanel p{font-size:.85rem;color:var(--muted);margin-bottom:8px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.chip{min-height:44px;padding:0 14px;border-radius:999px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:.9rem;cursor:pointer}
+.chip.sel{border-color:var(--accent);box-shadow:0 0 10px rgba(56,189,248,.5)}
+.lvl{width:44px;height:44px;border-radius:50%;border:3px solid transparent;cursor:pointer}
+.lvl.sel{border-color:#fff}
+#map{height:52vh;min-height:320px;border-radius:12px;border:1px solid var(--border);background:var(--panel)}
 .leaflet-container{background:#0b1220}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.8rem;color:var(--muted);margin:8px 0}
+.legend span::before{content:"";display:inline-block;width:22px;height:6px;border-radius:3px;margin-right:6px;vertical-align:middle;background:var(--c)}
+.hz{width:34px;height:34px;border-radius:50%;background:#0f172a;border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 1px 6px rgba(0,0,0,.6)}
 
-/* Diálogos y toast */
+/* Mensajes */
+.bigs{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.big{min-height:130px;border:0;border-radius:16px;color:#fff;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:12px;text-align:center;font-size:1.05rem;font-weight:800;box-shadow:0 3px 8px rgba(0,0,0,.4);transition:transform .12s,filter .15s}
+.big .ic{font-size:2.6rem;line-height:1}
+.big small{font-weight:500;font-size:.78rem;opacity:.95}
+.big:hover{filter:brightness(1.1)}.big:active{transform:scale(.96)}
+.big.red{background:linear-gradient(145deg,#ef4444,#7f1d1d)}
+.big.yellow{background:linear-gradient(145deg,#eab308,#a16207);color:#1c1917}
+.big.green{background:linear-gradient(145deg,#22c55e,#166534)}
+.big.blue{background:linear-gradient(145deg,#0ea5e9,#075985)}
+#feedback{text-align:center;color:var(--muted);font-size:.92rem;margin:12px 0;min-height:1.4em}
+#feedback.ok{color:var(--green)}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:14px;margin-top:14px}
+.card h3{font-size:1rem;margin-bottom:6px}
+.card p.sm{font-size:.82rem;color:var(--muted);margin-bottom:10px}
+.btn{min-height:46px;padding:0 18px;border-radius:12px;border:1px solid var(--border);background:rgba(148,163,184,.1);color:var(--text);font-size:.95rem;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+.btn.primary{background:#b91c1c;border-color:#b91c1c;font-weight:700}
+select{background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:10px;min-height:46px;font-size:.95rem}
+.params{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin:12px 0}
+.param{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:8px 10px;font-size:.82rem}
+.param b{display:block;font-size:.78rem;color:var(--muted);font-weight:600}
+.param.ok{border-color:var(--green)}.param.bad{border-color:var(--red)}
+.list{display:flex;flex-direction:column;gap:10px}
+.item{display:flex;gap:12px;align-items:flex-start;background:var(--panel);border:1px solid var(--border);border-left:5px solid #64748b;border-radius:12px;padding:12px}
+.item.red{border-left-color:var(--red)}.item.yellow{border-left-color:var(--yellow)}.item.green{border-left-color:var(--green)}.item.blue{border-left-color:var(--blue)}
+.item.expired{opacity:.5}
+.item .ic{font-size:1.7rem}.item .body{flex:1;min-width:0}
+.item .t{font-weight:700}.item .m{font-size:.78rem;color:var(--muted);margin-top:3px}
+.badge{display:inline-block;font-size:.66rem;font-weight:700;padding:2px 8px;border-radius:999px;border:1px solid var(--border);margin:4px 6px 0 0;text-transform:uppercase}
+.badge.demo{background:#a855f7;border-color:#a855f7}
+.empty{text-align:center;color:var(--muted);padding:24px 10px;border:1px dashed var(--border);border-radius:12px}
+
+/* Baliza */
+#beacon{position:fixed;inset:0;background:#7f1d1d;z-index:100;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center;animation:blink 1s infinite}
+#beacon.show{display:flex}
+@keyframes blink{50%{background:#450a0a}}
+#beacon h2{font-size:1.6rem;color:#fff;margin:0}
+#beacon p{max-width:420px;color:#fecaca}
+
 dialog{margin:auto;background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:14px;padding:20px;max-width:min(92vw,380px)}
 dialog::backdrop{background:rgba(0,0,0,.65)}
-dialog h3{margin-bottom:8px}
-dialog p{color:var(--muted);font-size:.92rem;margin-bottom:16px}
-dialog .row{display:flex;gap:10px;justify-content:flex-end}
+dialog h3{margin-bottom:8px}dialog p{color:var(--muted);font-size:.92rem;margin-bottom:16px}
+dialog .row{justify-content:flex-end}
 dialog button{min-height:44px;padding:0 18px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:.95rem;cursor:pointer}
-dialog button.danger{background:var(--crit);border-color:var(--crit);font-weight:700}
-#toast{position:fixed;left:50%;bottom:100px;transform:translateX(-50%) translateY(10px);background:var(--ok);color:#052e16;font-weight:700;padding:10px 18px;border-radius:999px;opacity:0;pointer-events:none;transition:all .25s;z-index:50;max-width:90vw;text-align:center}
-#toast.show{opacity:1;transform:translateX(-50%)}
-#toast.err{background:var(--crit);color:#fff}
-
-@media (max-width:560px){
-  header h1{font-size:.95rem}
-  .conn .long{display:none} .conn .short{display:inline}
-  .grid{grid-template-columns:repeat(2,1fr)}
-}
+dialog button.danger{background:var(--red);border-color:var(--red);font-weight:700}
+#toast{position:fixed;left:50%;bottom:100px;transform:translateX(-50%) translateY(10px);background:var(--green);color:#052e16;font-weight:700;padding:10px 18px;border-radius:999px;opacity:0;pointer-events:none;transition:all .25s;z-index:120;max-width:90vw;text-align:center}
+#toast.show{opacity:1;transform:translateX(-50%)}#toast.err{background:var(--red);color:#fff}
+@media (max-width:560px){header h1{font-size:1rem}.conn .lbl{display:none}}
 </style>
 </head>
 <body>
 
 <header>
-  <h1>🆘 Alertas de Emergencia</h1>
-  <div class="conn" id="conn" title="Estado de comunicación entre dispositivos">
-    <span class="dot"></span>
-    <span class="long">Sin red · solo almacenamiento local</span>
-    <span class="short">Sin red</span>
+  <h1>📡 RedOffline</h1>
+  <div class="conn" title="Estado de comunicación">
+    <span><i id="dotMesh"></i><span class="lbl">Malla: </span><span id="meshTxt">no disponible</span></span>
+    <span><i id="dotNet"></i><span class="lbl">Internet: </span><span id="netTxt">–</span></span>
   </div>
 </header>
 
 <main>
-  <!-- ============ MÓDULO 1: REPORTE Y ALERTA ============ -->
-  <section id="view-report" class="view active">
-    <nav class="subtabs" aria-label="Secciones de reporte y alerta">
-      <button class="ghost active" data-sub="new" aria-label="Nueva alerta" title="Nueva alerta">🚨</button>
-      <button class="ghost" data-sub="list" aria-label="Reportes" title="Reportes">📋</button>
-      <button class="ghost" data-sub="sum" aria-label="Resumen" title="Resumen">📊</button>
-    </nav>
-
-    <div id="sub-new" class="sub">
-      <div class="notice warn"><b>Limitación:</b> un navegador no puede crear una red Bluetooth/Wi-Fi Direct entre dispositivos ni retransmitir en segundo plano. Las alertas <b>se guardan solo en este dispositivo</b> (en tu navegador) hasta que exista un adaptador nativo.</div>
-      <div class="grid" id="kwGrid"></div>
-      <p id="feedback">Pulsa un botón para emitir la alerta. El color indica la gravedad.</p>
+  <!-- ============ VISTA 1: MAPA ============ -->
+  <section id="view-map" class="view active">
+    <div class="notice warn" id="mapWarn" hidden>⚠️ No se pudo cargar el mapa (Leaflet requiere haberse cargado al menos una vez con Internet). Los reportes siguen disponibles en la lista.</div>
+    <div class="toolbar">
+      <button class="ghost" id="tRoad" aria-label="Marcar tramo de calle" title="Marcar tramo de calle">🛣️</button>
+      <button class="ghost" id="tHaz" aria-label="Marcar obstáculo" title="Marcar obstáculo">⚠️</button>
+      <button class="ghost" id="tMe" aria-label="Centrar en mi ubicación" title="Mi ubicación">📍</button>
     </div>
-
-    <div id="sub-list" class="sub" hidden>
-      <div class="controls">
-        <input type="search" id="q" placeholder="Buscar…" maxlength="60" aria-label="Buscar reportes">
-        <select id="fPrio" aria-label="Filtrar por prioridad">
-          <option value="all">Todas</option><option value="critical">Crítico</option>
-          <option value="high">Alto</option><option value="moderate">Moderado</option>
-        </select>
-        <select id="fSort" aria-label="Ordenar">
-          <option value="priority">Prioridad</option><option value="recent">Recientes</option><option value="type">Tipo</option>
-        </select>
-      </div>
-      <div class="list" id="reportList"></div>
+    <div id="toolPanel" hidden></div>
+    <div id="map"></div>
+    <div class="legend">
+      <span style="--c:var(--red)">Bloqueo total</span>
+      <span style="--c:var(--yellow)">Tránsito peligroso</span>
+      <span style="--c:var(--green)">Ruta sugerida</span>
     </div>
-
-    <div id="sub-sum" class="sub" hidden>
-      <div class="stats" id="stats"></div>
-      <div class="toolbar">
-        <button class="ghost" id="btnDemo" aria-label="Cargar datos demo" title="Datos demo">🧪</button>
-        <button class="ghost" id="btnExport" aria-label="Exportar JSON" title="Exportar JSON">⬇</button>
-      </div>
-      <h2>Últimos reportes</h2>
-      <div class="list" id="recentList"></div>
-      <p class="notice" style="margin-top:14px">🔒 Tus datos se guardan solo en este navegador. No se envían a ningún servidor. Los mensajes no verificados no garantizan autenticidad.</p>
-    </div>
+    <details class="notice">
+      <summary>Sobre el mapa offline</summary>
+      <p>El selector de capas (arriba a la derecha del mapa) ofrece OpenStreetMap estándar, OSM Humanitario y un estilo oscuro con datos de OSM. Si abres este archivo con doble clic, OpenStreetMap puede bloquear sus mosaicos (exige un Referer) y se usa por defecto el estilo oscuro; para ver el estándar, sirve la carpeta con <code>python -m http.server</code> y abre <code>http://localhost:8000</code>.</p>
+      <p>Una página web no puede descargar mapas vectoriales por adelantado: los fondos de calles solo se ven si el navegador ya los tenía en caché. Las calles y obstáculos que dibujas se guardan en tu dispositivo y se muestran sobre el fondo aunque no haya mapa base. En una app nativa se usarían mapas vectoriales descargados (MapLibre/Mapbox offline).</p>
+    </details>
+    <h2>Tramos y obstáculos reportados</h2>
+    <div class="list" id="geoList"></div>
   </section>
 
-  <!-- ============ MÓDULO 2: MAPAS ============ -->
-  <section id="view-maps" class="view">
-    <div class="notice warn" id="mapWarn" hidden>⚠️ No se pudo cargar el mapa (probablemente no hay Internet). Se muestra la lista de reportes con coordenadas.</div>
-    <div id="map"></div>
-    <h2>Reportes con coordenadas</h2>
-    <div class="list" id="geoList"></div>
+  <!-- ============ VISTA 2: MENSAJES ============ -->
+  <section id="view-msg" class="view">
+    <div class="bigs" id="bigs"></div>
+    <p id="feedback">Un toque envía tu estado y tu ubicación actual.</p>
+
+    <details class="notice">
+      <summary>Limitaciones de esta versión web</summary>
+      <p>Un navegador no puede usar Wi-Fi Direct ni BLE para crear una malla, no puede emitir paquetes en segundo plano, no expone el barómetro y no puede subir la potencia de las antenas. Esta versión guarda todo en tu dispositivo y permite el intercambio manual de reportes mediante archivo. La integración nativa va en <code>CommAdapter</code>.</p>
+    </details>
+
+    <div class="card">
+      <h3>🔁 Intercambio de reportes (efecto eco manual)</h3>
+      <p class="sm">Sustituye al intercambio automático: exporta tus reportes y pásalos por el medio que tengas (archivo por Bluetooth, tarjeta, etc.). Al importar, se omiten los duplicados.</p>
+      <div class="row">
+        <button class="btn" id="btnExport">⬇ Exportar</button>
+        <button class="btn" id="btnImport">⬆ Importar</button>
+        <button class="btn" id="btnDemo">🧪 Datos demo</button>
+        <input type="file" id="fileIn" accept="application/json,.json" hidden>
+      </div>
+    </div>
+
+    <div class="card" id="rescueCard">
+      <h3>⚡ Autorescate (protocolo "Hombre Muerto")</h3>
+      <p class="sm">Si al terminar la cuenta regresiva el teléfono sigue inmóvil y sin interacción, emite la baliza crítica con tu última ubicación. Cualquier movimiento o toque tras los primeros 8 s cancela el protocolo. Mantén la pantalla encendida (se solicita bloqueo de suspensión).</p>
+      <div class="row">
+        <select id="rsDur" aria-label="Duración de la cuenta regresiva">
+          <option value="test">25 segundos (prueba)</option>
+          <option value="1">1 minuto</option><option value="5">5 minutos</option>
+          <option value="15">15 minutos</option><option value="30" selected>30 minutos</option>
+          <option value="60">60 minutos</option>
+        </select>
+        <button class="btn primary" id="rsBtn">🛡️ Activar protocolo</button>
+      </div>
+      <div class="params" id="rsParams"></div>
+      <p class="sm" id="rsMsg"></p>
+    </div>
+
+    <h2>Mensajes</h2>
+    <div class="list" id="msgList"></div>
   </section>
 </main>
 
-<!-- Dock inferior: SOLO los 2 módulos -->
-<nav id="dock" aria-label="Módulos">
-  <button class="ghost active" data-view="report" aria-label="Reporte y Alerta" title="Reporte y Alerta">📋</button>
-  <button class="ghost" data-view="maps" aria-label="Mapas" title="Mapas">🗺️</button>
+<nav id="dock" aria-label="Vistas">
+  <button class="ghost active" data-view="map" aria-label="Mapa" title="Mapa">🗺️</button>
+  <button class="ghost" data-view="msg" aria-label="Mensajes" title="Mensajes">💬</button>
 </nav>
 
-<dialog id="dlg">
-  <form method="dialog">
-    <h3 id="dlgTitle"></h3>
-    <p id="dlgText"></p>
-    <div class="row">
-      <button value="cancel">Cancelar</button>
-      <button value="ok" class="danger" id="dlgOk">Confirmar</button>
-    </div>
-  </form>
-</dialog>
+<div id="beacon" role="alertdialog" aria-live="assertive">
+  <div style="font-size:4rem">🆘</div>
+  <h2>BALIZA CRÍTICA ACTIVA</h2>
+  <p id="bcInfo"></p>
+  <button class="btn" id="bcStop">Desactivar baliza (estoy bien)</button>
+</div>
+
+<dialog id="dlg"><form method="dialog">
+  <h3 id="dlgTitle"></h3><p id="dlgText"></p>
+  <div class="row"><button value="cancel">Cancelar</button><button value="ok" class="danger" id="dlgOk">Confirmar</button></div>
+</form></dialog>
 <div id="toast" role="status" aria-live="polite"></div>
 
 <script>
 "use strict";
 
 /* =====================================================================
- * Utilidades generales
+ * Utilidades
  * ===================================================================== */
 const $ = (s, r = document) => r.querySelector(s);
-const $$ = (s, r = document) => [...r.querySelectorAll(s)];
-// Escapa texto antes de usarlo en HTML (p. ej. popups de Leaflet). Preferir textContent / h().
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-// Crea elementos del DOM de forma segura (el texto siempre entra como nodo de texto).
-function h(tag, props, ...kids) {
+function h(tag, props, ...kids) {           // el texto siempre entra como nodo de texto (sin innerHTML)
   const e = document.createElement(tag);
   for (const [k, v] of Object.entries(props || {})) {
     if (v == null || v === false) continue;
     if (k === "class") e.className = v;
+    else if (k === "style") e.style.cssText = v;
     else if (k.startsWith("on")) e.addEventListener(k.slice(2), v);
     else e.setAttribute(k, v);
   }
@@ -210,396 +215,555 @@ function h(tag, props, ...kids) {
   return e;
 }
 const fmtDate = ts => new Date(ts).toLocaleString("es-BO", { dateStyle: "short", timeStyle: "short" });
-const uuid = () => (crypto.randomUUID ? crypto.randomUUID()
-  : "id-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 10));
+const uuid = () => (crypto.randomUUID ? crypto.randomUUID() : "id-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 10));
+const TTL = 24 * 3600 * 1000;
 
 /* =====================================================================
- * Priority: catálogo de palabras clave y prioridades
+ * Catálogos
  * ===================================================================== */
-const PRIORITY = {
-  critical: { label: "Crítico",  rank: 0, color: "#ef4444" },
-  high:     { label: "Alto",     rank: 1, color: "#f97316" },
-  moderate: { label: "Moderado", rank: 2, color: "#64748b" }
+const STATUS = {
+  red:    { icon: "🔴", title: "Peligro inmediato",        sub: "Necesito rescate médico",         color: "#ef4444" },
+  yellow: { icon: "🟡", title: "Atrapado pero a salvo",    sub: "Camino bloqueado",                color: "#eab308" },
+  green:  { icon: "🟢", title: "Estoy bien",               sub: "Me desplazo a zona segura",       color: "#22c55e" },
+  blue:   { icon: "🔵", title: "Tengo suministros",        sub: "Ofrezco refugio",                 color: "#0ea5e9" }
 };
-const KEYWORDS = [
-  { type: "Herido",         icon: "🩹", priority: "critical" },
-  { type: "Atrapado",       icon: "🆘", priority: "critical" },
-  { type: "Ayuda urgente",  icon: "🚨", priority: "critical" },
-  { type: "Desaparecido",   icon: "🔍", priority: "critical" },
-  { type: "Incendio",       icon: "🔥", priority: "critical" },
-  { type: "Zona peligrosa", icon: "⚠️", priority: "high" },
-  { type: "Ruta bloqueada", icon: "🚧", priority: "high" },
-  { type: "Evacuación",     icon: "🏃", priority: "high" },
-  { type: "Inundación",     icon: "🌊", priority: "high" },
-  { type: "Derrumbe",       icon: "⛰️", priority: "high" },
-  { type: "Falta agua",     icon: "💧", priority: "moderate" },
-  { type: "Falta comida",   icon: "🍞", priority: "moderate" }
-];
-const iconFor = type => (KEYWORDS.find(k => k.type === type) || { icon: "❗" }).icon;
-const STATUS = { stored: "Almacenado", pending: "Pendiente", relayed: "Retransmitido", confirmed: "Confirmado", expired: "Expirado" };
-const MAX_CONTENT = 200;
-const TTL_MS = 24 * 60 * 60 * 1000;
+const LEVEL = {
+  red:    { label: "Bloqueo total",      color: "#ef4444" },
+  yellow: { label: "Tránsito peligroso", color: "#eab308" },
+  green:  { label: "Ruta sugerida",      color: "#22c55e" }
+};
+const HAZARD = {
+  landslide: { icon: "🪨", label: "Derrumbe" },
+  flood:     { icon: "🌊", label: "Inundación" },
+  collapse:  { icon: "🏚️", label: "Colapso de infraestructura" },
+  police:    { icon: "👮", label: "Presencia policial/militar" }
+};
+const RESCUE_CODE = "[CRITICAL_RESCUE_REQUIRED]";
 
 /* =====================================================================
- * Store: IndexedDB + identidad seudónima (localStorage solo para el id)
+ * Store: IndexedDB (reportes) + id seudónimo del dispositivo
+ * Tipos de registro (kind): status | road | hazard | rescue
  * ===================================================================== */
 const Store = {
   db: null, ok: false,
   open() {
-    return new Promise(resolve => {
-      if (!window.indexedDB) return resolve(false);
-      let req;
-      try { req = indexedDB.open("emergency-alerts", 1); } catch (e) { return resolve(false); }
-      req.onupgradeneeded = () => {
-        const s = req.result.createObjectStore("messages", { keyPath: "messageId" });
-        s.createIndex("createdAt", "createdAt");
-      };
-      req.onsuccess = () => { Store.db = req.result; Store.ok = true; resolve(true); };
-      req.onerror = () => resolve(false);
-      req.onblocked = () => resolve(false);
+    return new Promise(res => {
+      if (!window.indexedDB) return res(false);
+      let rq; try { rq = indexedDB.open("redoffline", 1); } catch (e) { return res(false); }
+      rq.onupgradeneeded = () => rq.result.createObjectStore("reports", { keyPath: "id" });
+      rq.onsuccess = () => { Store.db = rq.result; Store.ok = true; res(true); };
+      rq.onerror = rq.onblocked = () => res(false);
     });
   },
   tx(mode, fn) {
-    return new Promise((resolve, reject) => {
-      if (!Store.ok) return reject(new Error("IndexedDB no disponible"));
+    return new Promise((res, rej) => {
+      if (!Store.ok) return rej(new Error("IndexedDB no disponible"));
       try {
-        const t = Store.db.transaction("messages", mode);
-        const out = fn(t.objectStore("messages"));
-        t.oncomplete = () => resolve(out && "result" in out ? out.result : undefined);
-        t.onerror = t.onabort = () => reject(t.error || new Error("Error de transacción"));
-      } catch (e) { reject(e); }
+        const t = Store.db.transaction("reports", mode), out = fn(t.objectStore("reports"));
+        t.oncomplete = () => res(out && "result" in out ? out.result : undefined);
+        t.onerror = t.onabort = () => rej(t.error || new Error("tx"));
+      } catch (e) { rej(e); }
     });
   },
   all() { return Store.tx("readonly", s => s.getAll()); },
-  async add(msg) {            // devuelve false si es duplicado por messageId
-    const existing = await Store.tx("readonly", s => s.get(msg.messageId));
-    if (existing) return false;
-    await Store.tx("readwrite", s => s.add(msg));
-    return true;
-  },
-  put(msg) { return Store.tx("readwrite", s => s.put(msg)); },
+  async add(r) { if (await Store.tx("readonly", s => s.get(r.id))) return false; await Store.tx("readwrite", s => s.add(r)); return true; },
+  put(r) { return Store.tx("readwrite", s => s.put(r)); },
   remove(id) { return Store.tx("readwrite", s => s.delete(id)); },
   deviceId() {
-    try {
-      let id = localStorage.getItem("deviceId");
-      if (!id) { id = "peer-" + Math.random().toString(36).slice(2, 8); localStorage.setItem("deviceId", id); }
-      return id;
-    } catch (e) { return "peer-local"; }
+    try { let id = localStorage.getItem("deviceId"); if (!id) { id = "peer-" + Math.random().toString(36).slice(2, 8); localStorage.setItem("deviceId", id); } return id; }
+    catch (e) { return "peer-local"; }
   }
 };
 
 /* =====================================================================
- * Messages: creación, expiración, estado en memoria
+ * Data: registros en memoria, expiración y creación
  * ===================================================================== */
-const State = { msgs: [], map: null, layer: null, leafletOk: false };
-
-const Messages = {
+const Data = {
+  recs: [],
   async refresh() {
     try {
-      await Messages.expireOld();
-      State.msgs = await Store.all();
-    } catch (e) { State.msgs = []; UI.toast("No se pudo leer el almacenamiento local", true); }
+      const now = Date.now(), all = await Store.all();
+      for (const r of all) if (r.expiresAt <= now && r.deliveryStatus !== "expired") { r.deliveryStatus = "expired"; await Store.put(r); }
+      Data.recs = all;
+    } catch (e) { Data.recs = []; UI.toast("No se pudo leer el almacenamiento local", true); }
   },
-  // Marca como "expired" los mensajes cuyo expiresAt ya pasó.
-  async expireOld() {
+  live(kinds) { return Data.recs.filter(r => r.deliveryStatus !== "expired" && (!kinds || kinds.includes(r.kind))); },
+  base(kind, extra) {
     const now = Date.now();
-    const list = await Store.all();
-    for (const m of list) {
-      if (m.expiresAt <= now && m.deliveryStatus !== "expired") {
-        m.deliveryStatus = "expired";
-        await Store.put(m);
-      }
-    }
+    return Object.assign({ id: uuid(), kind, originId: Store.deviceId(), createdAt: now, expiresAt: now + TTL,
+      hopCount: 0, receivedFrom: null, deliveryStatus: "stored", isDemo: false, lat: null, lng: null }, extra);
   },
-  build(kw, loc) {
-    const now = Date.now();
-    return {
-      messageId: uuid(),
-      originId: Store.deviceId(),
-      createdAt: now,
-      priority: kw.priority,
-      messageType: kw.type,
-      content: (kw.content || kw.type).slice(0, MAX_CONTENT),
-      latitude: loc ? loc.latitude : null,
-      longitude: loc ? loc.longitude : null,
-      locationText: loc ? "GPS" : "",
-      hopCount: 0,
-      expiresAt: now + TTL_MS,
-      deliveryStatus: "stored",
-      isDemo: false,
-      receivedFrom: null
-    };
-  },
-  filtered() {
-    const q = $("#q").value.trim().toLowerCase();
-    const p = $("#fPrio").value, sort = $("#fSort").value;
-    let list = State.msgs.filter(m =>
-      (p === "all" || m.priority === p) &&
-      (!q || (m.messageType + " " + m.content).toLowerCase().includes(q)));
-    const byDate = (a, b) => b.createdAt - a.createdAt;
-    if (sort === "priority") list.sort((a, b) => PRIORITY[a.priority].rank - PRIORITY[b.priority].rank || byDate(a, b));
-    else if (sort === "type") list.sort((a, b) => a.messageType.localeCompare(b.messageType, "es") || byDate(a, b));
-    else list.sort(byDate);
-    return list;
-  },
-  demo() {
-    const base = { lat: -19.0333, lng: -65.2627 }, now = Date.now();
-    const rows = [
-      ["demo-1", "Herido", "critical", "Persona herida en plaza (ejemplo)", 0.004, -0.003],
-      ["demo-2", "Ruta bloqueada", "high", "Camino cortado por derrumbe (ejemplo)", -0.006, 0.005],
-      ["demo-3", "Falta agua", "moderate", "Barrio sin agua potable (ejemplo)", 0.009, 0.007],
-      ["demo-4", "Atrapado", "critical", "Persona atrapada en vivienda (ejemplo)", -0.003, -0.008]
-    ];
-    return rows.map(([id, type, priority, content, dLat, dLng], i) => ({
-      messageId: id, originId: "peer-demo", createdAt: now - i * 600000, priority, messageType: type,
-      content, latitude: base.lat + dLat, longitude: base.lng + dLng, locationText: "DEMO",
-      hopCount: 0, expiresAt: now + TTL_MS, deliveryStatus: "stored", isDemo: true, receivedFrom: null
-    }));
+  async save(rec) {
+    const added = await Store.add(rec);
+    CommAdapter.send(rec);                    // no-op en navegador
+    await Data.refresh();
+    return added;
   }
 };
 
 /* =====================================================================
- * Location: GPS silencioso (opcional, nunca bloquea)
+ * Geo: última posición conocida (watchPosition) o lectura puntual
  * ===================================================================== */
-const Location = {
-  get() {
-    return new Promise(resolve => {
-      if (!navigator.geolocation) return resolve(null);
-      let done = false;
-      const finish = v => { if (!done) { done = true; resolve(v); } };
-      setTimeout(() => finish(null), 5000);
-      try {
-        navigator.geolocation.getCurrentPosition(
-          p => finish({ latitude: +p.coords.latitude.toFixed(5), longitude: +p.coords.longitude.toFixed(5) }),
-          () => finish(null),
-          { enableHighAccuracy: true, timeout: 4500, maximumAge: 60000 });
-      } catch (e) { finish(null); }
+const Geo = {
+  last: null, watchId: null,
+  start() {
+    if (Geo.watchId != null || !navigator.geolocation) return;
+    try {
+      Geo.watchId = navigator.geolocation.watchPosition(
+        p => { Geo.last = { lat: +p.coords.latitude.toFixed(6), lng: +p.coords.longitude.toFixed(6), t: Date.now() }; GMap.me(); },
+        () => {}, { enableHighAccuracy: true, maximumAge: 15000, timeout: 20000 });
+    } catch (e) {}
+  },
+  async get() {
+    Geo.start();
+    if (Geo.last && Date.now() - Geo.last.t < 60000) return Geo.last;
+    return new Promise(res => {
+      if (!navigator.geolocation) return res(Geo.last);
+      let done = false; const fin = v => { if (!done) { done = true; res(v); } };
+      setTimeout(() => fin(Geo.last), 4500);
+      try { navigator.geolocation.getCurrentPosition(
+        p => { Geo.last = { lat: +p.coords.latitude.toFixed(6), lng: +p.coords.longitude.toFixed(6), t: Date.now() }; fin(Geo.last); },
+        () => fin(Geo.last), { enableHighAccuracy: true, timeout: 4000, maximumAge: 60000 }); }
+      catch (e) { fin(Geo.last); }
     });
   }
 };
 
 /* =====================================================================
- * CommAdapter: punto de integración para transporte entre dispositivos
+ * CommAdapter: punto de integración del transporte entre dispositivos
  * ---------------------------------------------------------------------
- * LIMITACIÓN HONESTA: los navegadores NO exponen Bluetooth mesh, Wi-Fi
- * Direct ni retransmisión en segundo plano. Este prototipo NO transmite
- * nada. En una app nativa (Android/iOS) aquí se integraría un adaptador
- * que implemente esta interfaz usando Nearby Connections / Bluetooth LE /
- * Wi-Fi Direct, y que actualice deliveryStatus (pending → relayed →
- * confirmed), hopCount y receivedFrom.
+ * LIMITACIÓN HONESTA: el navegador NO permite Wi-Fi Direct, BLE
+ * advertising/scanning en segundo plano ni control de potencia de antena.
+ * Esta versión NO transmite nada. En una app nativa, aquí se implementaría
+ * la malla (Nearby Connections / BLE / Wi-Fi Direct) con store-and-forward:
+ *   - send(rec): difundir el registro a pares cercanos.
+ *   - onReceive(cb): recibir registros, sanear (ver Mesh.sanitize),
+ *     deduplicar por id, incrementar hopCount y re-difundir.
+ *   - beacon(rec): modo baliza crítica a máxima potencia.
  * ===================================================================== */
 const CommAdapter = {
-  status() { return { connected: false, label: "Sin red", peers: 0 }; },
-  send(/* msg */)   { /* no-op: sin transporte disponible en el navegador */ return false; },
-  onReceive(/* cb */) { /* no-op: nunca se reciben mensajes sin adaptador nativo */ }
+  status() { return { meshAvailable: false, peers: 0 }; },
+  send(/* rec */) { return false; },
+  beacon(/* rec */) { return false; },
+  onReceive(/* cb */) {}
 };
 
 /* =====================================================================
- * UI: toast, diálogo de confirmación, navegación
+ * Mesh: intercambio manual por archivo JSON (sustituto honesto del eco P2P)
+ * ===================================================================== */
+const Mesh = {
+  num(v, min, max) { v = Number(v); return Number.isFinite(v) && v >= min && v <= max ? v : null; },
+  // Lista blanca de campos: nunca se confía en el objeto importado.
+  sanitize(r) {
+    if (!r || typeof r !== "object") return null;
+    const id = String(r.id || "");
+    if (!/^[\w-]{6,64}$/.test(id) || !["status", "road", "hazard", "rescue"].includes(r.kind)) return null;
+    const now = Date.now(), createdAt = Number(r.createdAt), expiresAt = Number(r.expiresAt);
+    if (!Number.isFinite(createdAt) || createdAt > now + 3600000 || !Number.isFinite(expiresAt) || expiresAt <= now) return null;
+    const out = { id, kind: r.kind, originId: String(r.originId || "desconocido").replace(/[^\w-]/g, "").slice(0, 24) || "desconocido",
+      createdAt, expiresAt: Math.min(expiresAt, createdAt + TTL), hopCount: Math.min(Math.max(parseInt(r.hopCount) || 0, 0), 50) + 1,
+      deliveryStatus: "stored", isDemo: r.isDemo === true, lat: Mesh.num(r.lat, -90, 90), lng: Mesh.num(r.lng, -180, 180) };
+    out.receivedFrom = out.originId;
+    if (out.lat == null || out.lng == null) out.lat = out.lng = null;
+    if (r.kind === "status") { if (!STATUS[r.code]) return null; out.code = r.code; }
+    if (r.kind === "road") {
+      if (!LEVEL[r.level] || !Array.isArray(r.path) || r.path.length < 2 || r.path.length > 60) return null;
+      const path = r.path.map(p => Array.isArray(p) ? [Mesh.num(p[0], -90, 90), Mesh.num(p[1], -180, 180)] : [null, null]);
+      if (path.some(p => p[0] == null || p[1] == null)) return null;
+      out.level = r.level; out.path = path;
+    }
+    if (r.kind === "hazard") { if (!HAZARD[r.hazardType] || out.lat == null) return null; out.hazardType = r.hazardType; }
+    if (r.kind === "rescue") { out.code = RESCUE_CODE; }
+    return out;
+  },
+  async exportFile() {
+    try {
+      await Data.refresh();
+      const payload = { app: "RedOffline", version: 1, exportedAt: new Date().toISOString(), records: Data.live() };
+      const a = h("a", { href: URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" })), download: "redoffline-eco.json" });
+      document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+      UI.toast("Reportes exportados");
+    } catch (e) { UI.toast("No se pudo exportar", true); }
+  },
+  async importFile(file) {
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) return UI.toast("Archivo demasiado grande", true);
+    try {
+      const data = JSON.parse(await file.text());
+      const list = Array.isArray(data.records) ? data.records.slice(0, 500) : [];
+      let ok = 0, dup = 0, bad = 0;
+      for (const raw of list) {
+        const rec = Mesh.sanitize(raw);
+        if (!rec) { bad++; continue; }
+        (await Store.add(rec)) ? ok++ : dup++;
+      }
+      await Data.refresh(); Renders.all();
+      UI.toast(`Importados: ${ok} · duplicados: ${dup} · descartados: ${bad}`, ok === 0 && bad > 0);
+    } catch (e) { UI.toast("Archivo no válido", true); }
+  },
+  demo() {
+    const c = { lat: -19.0333, lng: -65.2627 }, now = Date.now();
+    const mk = (id, kind, extra) => Object.assign({ id, kind, originId: "peer-demo", createdAt: now - 300000, expiresAt: now + TTL, hopCount: 1, receivedFrom: "peer-demo", deliveryStatus: "stored", isDemo: true, lat: null, lng: null }, extra);
+    return [
+      mk("demo-road-1", "road", { level: "red", path: [[c.lat + .004, c.lng - .006], [c.lat + .004, c.lng + .002], [c.lat + .007, c.lng + .004]] }),
+      mk("demo-road-2", "road", { level: "yellow", path: [[c.lat - .003, c.lng - .005], [c.lat - .003, c.lng + .004]] }),
+      mk("demo-road-3", "road", { level: "green", path: [[c.lat - .003, c.lng + .004], [c.lat - .008, c.lng + .006], [c.lat - .010, c.lng + .010]] }),
+      mk("demo-haz-1", "hazard", { hazardType: "landslide", lat: c.lat + .0075, lng: c.lng + .0042 }),
+      mk("demo-haz-2", "hazard", { hazardType: "flood", lat: c.lat - .003, lng: c.lng + .0 }),
+      mk("demo-st-1", "status", { code: "red", lat: c.lat + .001, lng: c.lng - .002 }),
+      mk("demo-st-2", "status", { code: "blue", lat: c.lat - .006, lng: c.lng + .006 })
+    ];
+  }
+};
+
+/* =====================================================================
+ * UI: toast, confirmación, vistas
  * ===================================================================== */
 const UI = {
-  toastTimer: null,
-  toast(text, err) {
-    const t = $("#toast");
-    t.textContent = text; t.classList.toggle("err", !!err); t.classList.add("show");
-    clearTimeout(UI.toastTimer);
-    UI.toastTimer = setTimeout(() => t.classList.remove("show"), 2500);
+  t: null,
+  toast(txt, err) {
+    const e = $("#toast"); e.textContent = txt; e.classList.toggle("err", !!err); e.classList.add("show");
+    clearTimeout(UI.t); UI.t = setTimeout(() => e.classList.remove("show"), 2800);
   },
-  confirm(title, text, okLabel) {
-    const dlg = $("#dlg");
-    if (!dlg.showModal) return Promise.resolve(window.confirm(title + "\n\n" + text));
-    $("#dlgTitle").textContent = title;
-    $("#dlgText").textContent = text;
-    $("#dlgOk").textContent = okLabel || "Confirmar";
-    return new Promise(resolve => {
-      dlg.addEventListener("close", () => resolve(dlg.returnValue === "ok"), { once: true });
-      dlg.showModal();
+  confirm(title, text, ok) {
+    const d = $("#dlg");
+    if (!d.showModal) return Promise.resolve(window.confirm(title + "\n\n" + text));
+    $("#dlgTitle").textContent = title; $("#dlgText").textContent = text; $("#dlgOk").textContent = ok || "Confirmar";
+    return new Promise(res => { d.addEventListener("close", () => res(d.returnValue === "ok"), { once: true }); d.showModal(); });
+  },
+  view(name) {
+    document.querySelectorAll("#dock .ghost").forEach(b => b.classList.toggle("active", b.dataset.view === name));
+    document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === "view-" + name));
+    Renders.all();
+  },
+  net() {
+    const on = navigator.onLine;
+    $("#dotNet").classList.toggle("on", on); $("#netTxt").textContent = on ? "sí" : "no";
+    $("#dotMesh").classList.toggle("on", CommAdapter.status().meshAvailable);
+    $("#meshTxt").textContent = CommAdapter.status().meshAvailable ? "activa" : "no disponible";
+  }
+};
+
+/* =====================================================================
+ * Mapa: calles coloreadas, obstáculos, estados recibidos
+ * ===================================================================== */
+const GMap = {
+  map: null, layer: null, meMarker: null, ok: false, fitted: false, tileErr: 0,
+  tool: null,   // { mode:"road", pts:[], level:"red", temp } | { mode:"hazard", type:null }
+  ensure() {
+    const L = window.L;
+    GMap.ok = !!(L && L.map) && !window.__leafletFailed;
+    $("#mapWarn").hidden = GMap.ok; $("#map").style.display = GMap.ok ? "block" : "none";
+    if (!GMap.ok) return false;
+    if (!GMap.map) {
+      try {
+        GMap.map = L.map("map").setView([-19.0333, -65.2627], 14);
+        // Capas basadas en datos de OpenStreetMap (atribución obligatoria en todas).
+        const ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+        const osm = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: ATTR });
+        const hot = L.tileLayer("https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png", { maxZoom: 19,
+          attribution: ATTR + ' · estilo <a href="https://www.hotosm.org/">HOT</a>' });
+        const carto = L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", { maxZoom: 19, subdomains: "abcd",
+          attribution: ATTR + ' &copy; <a href="https://carto.com/attributions">CARTO</a>' });
+        // Los servidores de OSM exigen un Referer: al abrir el HTML como archivo (file://) no lo hay y bloquean los mosaicos.
+        (location.protocol === "file:" ? carto : osm).addTo(GMap.map);
+        L.control.layers({ "OpenStreetMap": osm, "OSM Humanitario": hot, "OSM oscuro (CARTO)": carto }, null, { position: "topright" }).addTo(GMap.map);
+        osm.on("tileerror", () => {   // si OSM falla repetidamente, pasa a la capa alternativa
+          if (++GMap.tileErr === 6 && GMap.map.hasLayer(osm)) { GMap.map.removeLayer(osm); carto.addTo(GMap.map); UI.toast("OpenStreetMap no respondió; usando mapa alternativo", true); }
+        });
+        GMap.layer = L.layerGroup().addTo(GMap.map);
+        GMap.map.on("click", e => GMap.click(e.latlng));
+      } catch (err) { GMap.ok = false; $("#mapWarn").hidden = false; $("#map").style.display = "none"; return false; }
+    }
+    return true;
+  },
+  render() {
+    const roads = Data.live(["road"]), haz = Data.live(["hazard"]), sts = Data.live(["status", "rescue"]).filter(r => r.lat != null);
+    const items = [...roads, ...haz, ...sts].sort((a, b) => b.createdAt - a.createdAt);
+    const box = $("#geoList"); box.replaceChildren();
+    const lst = [...roads, ...haz].sort((a, b) => b.createdAt - a.createdAt);
+    if (!lst.length) box.append(h("div", { class: "empty" }, "Sin reportes de calles u obstáculos. Usa 🛣️ y ⚠️, o importa/carga datos demo en Mensajes."));
+    lst.forEach(r => box.append(Renders.item(r)));
+    if (!GMap.ensure()) return;
+    const L = window.L, pts = [];
+    GMap.layer.clearLayers();
+    roads.forEach(r => {
+      L.polyline(r.path, { color: LEVEL[r.level].color, weight: 7, opacity: .88, lineCap: "round" })
+        .bindPopup(`<b>${esc(LEVEL[r.level].label)}</b>${r.isDemo ? " (DEMO)" : ""}<br><small>${esc(fmtDate(r.createdAt))}</small>`).addTo(GMap.layer);
+      pts.push(...r.path);
     });
+    haz.forEach(r => {
+      const hz = HAZARD[r.hazardType];
+      L.marker([r.lat, r.lng], { icon: L.divIcon({ className: "", html: `<div class="hz">${hz.icon}</div>`, iconSize: [34, 34], iconAnchor: [17, 17] }) })
+        .bindPopup(`<b>${hz.icon} ${esc(hz.label)}</b>${r.isDemo ? " (DEMO)" : ""}<br><small>${esc(fmtDate(r.createdAt))}</small>`).addTo(GMap.layer);
+      pts.push([r.lat, r.lng]);
+    });
+    sts.forEach(r => {
+      const col = r.kind === "rescue" ? "#ffffff" : STATUS[r.code].color;
+      const label = r.kind === "rescue" ? "🆘 Rescate crítico" : `${STATUS[r.code].icon} ${STATUS[r.code].title}`;
+      L.circleMarker([r.lat, r.lng], { radius: 9, color: r.kind === "rescue" ? "#ef4444" : "#fff", weight: 3, fillColor: col, fillOpacity: .95 })
+        .bindPopup(`<b>${esc(label)}</b>${r.isDemo ? " (DEMO)" : ""}<br><small>${esc(fmtDate(r.createdAt))}</small>`).addTo(GMap.layer);
+      pts.push([r.lat, r.lng]);
+    });
+    if (GMap.tool && GMap.tool.temp) GMap.tool.temp.addTo(GMap.layer);
+    setTimeout(() => { GMap.map.invalidateSize(); if (pts.length && !GMap.fitted) { GMap.map.fitBounds(pts, { padding: [40, 40], maxZoom: 17 }); GMap.fitted = true; } }, 60);
+    GMap.me();
   },
-  showView(name) {
-    $$("#dock .ghost").forEach(b => b.classList.toggle("active", b.dataset.view === name));
-    $$(".view").forEach(v => v.classList.toggle("active", v.id === "view-" + name));
-    if (name === "maps") Renders.map(); else Renders.current();
+  me() {
+    if (!GMap.ok || !GMap.map || !Geo.last) return;
+    const ll = [Geo.last.lat, Geo.last.lng];
+    if (!GMap.meMarker) GMap.meMarker = window.L.circleMarker(ll, { radius: 7, color: "#fff", weight: 3, fillColor: "#38bdf8", fillOpacity: 1 }).addTo(GMap.map).bindPopup("Tu ubicación");
+    else GMap.meMarker.setLatLng(ll);
   },
-  showSub(name) {
-    $$(".subtabs .ghost").forEach(b => b.classList.toggle("active", b.dataset.sub === name));
-    $$(".sub").forEach(s => s.hidden = s.id !== "sub-" + name);
-    Renders.current();
+  async center() {
+    UI.toast("Buscando ubicación…");
+    const p = await Geo.get();
+    if (!p) return UI.toast("Ubicación no disponible", true);
+    if (GMap.ensure()) { GMap.map.setView([p.lat, p.lng], 16); GMap.me(); }
   },
-  currentSub() { return ($(".subtabs .ghost.active") || {}).dataset?.sub || "new"; }
+  setTool(mode) {
+    if (GMap.tool && GMap.tool.temp) GMap.tool.temp.remove();
+    GMap.tool = GMap.tool && GMap.tool.mode === mode ? null : (mode ? (mode === "road" ? { mode, pts: [], level: "red", temp: null } : { mode, type: null }) : null);
+    if (GMap.tool && mode === "road" && !GMap.ensure()) { GMap.tool = null; UI.toast("Trazar calles requiere el mapa", true); }
+    GMap.panel();
+  },
+  panel() {
+    const p = $("#toolPanel"), t = GMap.tool;
+    $("#tRoad").classList.toggle("active", !!t && t.mode === "road");
+    $("#tHaz").classList.toggle("active", !!t && t.mode === "hazard");
+    p.hidden = !t; p.replaceChildren();
+    if (!t) return;
+    if (t.mode === "road") {
+      p.append(h("p", {}, `Toca el mapa para marcar los puntos del tramo (${t.pts.length} marcados, mínimo 2) y elige el estado.`),
+        h("div", { class: "row" },
+          Object.entries(LEVEL).map(([k, v]) => h("button", { class: "lvl" + (t.level === k ? " sel" : ""), style: `background:${v.color}`, title: v.label, "aria-label": v.label,
+            onclick: () => { t.level = k; GMap.restyle(); GMap.panel(); } })),
+          h("button", { class: "ghost", title: "Deshacer punto", "aria-label": "Deshacer punto", onclick: () => { t.pts.pop(); GMap.restyle(); GMap.panel(); } }, "↶"),
+          h("button", { class: "ghost", title: "Guardar tramo", "aria-label": "Guardar tramo", onclick: GMap.saveRoad }, "✔"),
+          h("button", { class: "ghost", title: "Cancelar", "aria-label": "Cancelar", onclick: () => GMap.setTool(null) }, "✖")));
+    } else {
+      p.append(h("p", {}, t.type ? "Toca el mapa para ubicarlo, o usa 📍 para marcarlo en tu posición." : "Elige el tipo de peligro."),
+        h("div", { class: "row" },
+          Object.entries(HAZARD).map(([k, v]) => h("button", { class: "chip" + (t.type === k ? " sel" : ""), onclick: () => { t.type = k; GMap.panel(); } }, `${v.icon} ${v.label}`)),
+          h("button", { class: "chip", onclick: () => GMap.saveHazardHere() }, "📍 Aquí (GPS)"),
+          h("button", { class: "ghost", title: "Cancelar", "aria-label": "Cancelar", onclick: () => GMap.setTool(null) }, "✖")));
+    }
+  },
+  restyle() {
+    const t = GMap.tool; if (!t || t.mode !== "road" || !GMap.ok) return;
+    if (t.temp) t.temp.remove();
+    t.temp = t.pts.length ? window.L.polyline(t.pts, { color: LEVEL[t.level].color, weight: 7, opacity: .6, dashArray: "8 8" }).addTo(GMap.map) : null;
+  },
+  click(ll) {
+    const t = GMap.tool; if (!t) return;
+    if (t.mode === "road") { t.pts.push([+ll.lat.toFixed(6), +ll.lng.toFixed(6)]); GMap.restyle(); GMap.panel(); }
+    else if (t.mode === "hazard") GMap.saveHazard(t.type, ll.lat, ll.lng);
+  },
+  async saveRoad() {
+    const t = GMap.tool; if (!t || t.pts.length < 2) return UI.toast("Marca al menos 2 puntos", true);
+    try { await Data.save(Data.base("road", { level: t.level, path: t.pts.slice(0, 60) })); UI.toast("Tramo guardado"); }
+    catch (e) { UI.toast("No se pudo guardar", true); }
+    GMap.setTool(null); GMap.render();
+  },
+  async saveHazard(type, lat, lng) {
+    if (!type) return UI.toast("Elige primero el tipo de peligro", true);
+    try { await Data.save(Data.base("hazard", { hazardType: type, lat: +(+lat).toFixed(6), lng: +(+lng).toFixed(6) })); UI.toast("Obstáculo guardado"); }
+    catch (e) { UI.toast("No se pudo guardar", true); }
+    GMap.setTool(null); GMap.render();
+  },
+  async saveHazardHere() {
+    const t = GMap.tool; if (!t || !t.type) return UI.toast("Elige primero el tipo de peligro", true);
+    const p = await Geo.get(); if (!p) return UI.toast("Ubicación no disponible", true);
+    GMap.saveHazard(t.type, p.lat, p.lng);
+  }
+};
+
+/* =====================================================================
+ * Mensajes: botones predefinidos
+ * ===================================================================== */
+const Msgs = {
+  async send(code) {
+    const fb = $("#feedback"); fb.className = ""; fb.textContent = "Obteniendo ubicación…";
+    try {
+      const p = await Geo.get();
+      await Data.save(Data.base("status", { code, lat: p ? p.lat : null, lng: p ? p.lng : null }));
+      fb.className = "ok";
+      fb.textContent = `✔ "${STATUS[code].title}" guardado${p ? " con tu ubicación" : " (sin ubicación: GPS no disponible)"}. Solo almacenado en este dispositivo.`;
+      UI.toast(STATUS[code].icon + " Mensaje guardado");
+      Renders.all();
+    } catch (e) { fb.textContent = "No se pudo guardar el mensaje."; UI.toast("Error de almacenamiento", true); }
+  }
+};
+
+/* =====================================================================
+ * Rescue: protocolo "Hombre Muerto"
+ * Parámetros (todos en paralelo): temporizador, inmovilidad (acelerómetro/
+ * giroscopio), sin interacción táctil. Presión: el navegador NO expone
+ * barómetro, por lo que no se evalúa (se muestra como no disponible).
+ * "0.0G" exacto es irreal por el ruido del sensor: se usa un umbral bajo.
+ * ===================================================================== */
+const Rescue = {
+  GRACE: 8000, MOVE_ACC: 0.35, MOVE_ROT: 8,
+  state: "idle", endAt: 0, graceEnd: 0, test: false, sensorSeen: false, prev: null, hits: 0,
+  timer: null, ctx: null, osc: null, gain: null, pulse: null, wake: null, record: null,
+  async arm() {
+    if (Rescue.state !== "idle") return;
+    const sel = $("#rsDur").value; Rescue.test = sel === "test";
+    const ms = Rescue.test ? 25000 : (+sel) * 60000;
+    try { if (window.DeviceMotionEvent && typeof DeviceMotionEvent.requestPermission === "function") await DeviceMotionEvent.requestPermission(); } catch (e) {}
+    try { Rescue.ctx = new (window.AudioContext || window.webkitAudioContext)(); await Rescue.ctx.resume(); } catch (e) { Rescue.ctx = null; }
+    try { if (navigator.wakeLock) Rescue.wake = await navigator.wakeLock.request("screen"); } catch (e) { Rescue.wake = null; }
+    Geo.start();
+    const now = Date.now();
+    Object.assign(Rescue, { state: "armed", endAt: now + ms, graceEnd: now + Rescue.GRACE, sensorSeen: false, prev: null, hits: 0 });
+    window.addEventListener("devicemotion", Rescue.onMotion);
+    ["pointerdown", "touchstart", "keydown"].forEach(ev => document.addEventListener(ev, Rescue.onTouch, true));
+    Rescue.timer = setInterval(Rescue.tick, 500);
+    $("#rsMsg").textContent = "Protocolo activo. Deja el teléfono quieto en 8 segundos; cualquier movimiento o toque lo cancela.";
+    Rescue.draw();
+  },
+  onMotion(e) {
+    const a = e.accelerationIncludingGravity, r = e.rotationRate; let moving = false;
+    if (a && a.x != null) {
+      Rescue.sensorSeen = true;
+      const mag = Math.hypot(a.x, a.y, a.z);
+      if (Rescue.prev != null && Math.abs(mag - Rescue.prev) > Rescue.MOVE_ACC) moving = true;
+      Rescue.prev = mag;
+    }
+    if (r && (Math.abs(r.alpha || 0) + Math.abs(r.beta || 0) + Math.abs(r.gamma || 0)) > Rescue.MOVE_ROT) moving = true;
+    if (Date.now() < Rescue.graceEnd) { Rescue.hits = 0; return; }
+    Rescue.hits = moving ? Rescue.hits + 1 : 0;
+    if (Rescue.hits >= 2) Rescue.cancel("se detectó movimiento");
+  },
+  onTouch() { if (Rescue.state === "armed" && Date.now() > Rescue.graceEnd) Rescue.cancel("hubo interacción con el teléfono"); },
+  tick() {
+    if (Rescue.state !== "armed") return;
+    const now = Date.now();
+    if (now > Rescue.graceEnd && !Rescue.sensorSeen && !Rescue.test) return Rescue.cancel("no hay acelerómetro disponible para verificar la inmovilidad");
+    if (now >= Rescue.endAt) return Rescue.fire();
+    Rescue.draw();
+  },
+  stopMonitoring() {
+    clearInterval(Rescue.timer); Rescue.timer = null;
+    window.removeEventListener("devicemotion", Rescue.onMotion);
+    ["pointerdown", "touchstart", "keydown"].forEach(ev => document.removeEventListener(ev, Rescue.onTouch, true));
+  },
+  releaseHw() {
+    try { if (Rescue.wake) Rescue.wake.release(); } catch (e) {} Rescue.wake = null;
+    try { if (Rescue.ctx) Rescue.ctx.close(); } catch (e) {} Rescue.ctx = null;
+  },
+  cancel(reason) {
+    if (Rescue.state !== "armed") return;
+    Rescue.stopMonitoring(); Rescue.releaseHw(); Rescue.state = "idle";
+    $("#rsMsg").textContent = "Alerta cancelada: " + reason + ".";
+    UI.toast("Autorescate cancelado", true); Rescue.draw();
+  },
+  async fire() {
+    Rescue.stopMonitoring(); Rescue.state = "beacon";
+    const p = Geo.last;                                   // últimas coordenadas grabadas
+    const rec = Data.base("rescue", { code: RESCUE_CODE, lat: p ? p.lat : null, lng: p ? p.lng : null, isDemo: Rescue.test });
+    try { await Data.save(rec); } catch (e) {}
+    CommAdapter.beacon(rec);                              // no-op: sin BLE/Wi-Fi en navegador
+    Rescue.tone();
+    $("#bcInfo").textContent = (p ? `Última ubicación: ${p.lat}, ${p.lng}. ` : "Sin coordenadas GPS disponibles. ") +
+      (Rescue.test ? "(MODO PRUEBA) " : "") + "Esta versión web guarda el registro en el dispositivo y emite el pulso ultrasónico por el altavoz; no puede transmitir por BLE ni Wi-Fi.";
+    $("#beacon").classList.add("show");
+    Rescue.draw(); Renders.all();
+  },
+  tone() {                                                // pulso ultrasónico ~19 kHz (muchos altavoces no lo reproducen bien)
+    if (!Rescue.ctx) return;
+    try {
+      Rescue.osc = Rescue.ctx.createOscillator(); Rescue.gain = Rescue.ctx.createGain();
+      Rescue.osc.type = "sine"; Rescue.osc.frequency.value = 19000; Rescue.gain.gain.value = 0;
+      Rescue.osc.connect(Rescue.gain); Rescue.gain.connect(Rescue.ctx.destination); Rescue.osc.start();
+      let on = false; Rescue.pulse = setInterval(() => { on = !on; Rescue.gain.gain.value = on ? 0.9 : 0; }, 500);
+    } catch (e) {}
+  },
+  stopBeacon() {
+    clearInterval(Rescue.pulse); try { if (Rescue.osc) Rescue.osc.stop(); } catch (e) {} Rescue.osc = null;
+    Rescue.releaseHw(); Rescue.state = "idle";
+    $("#beacon").classList.remove("show"); $("#rsMsg").textContent = "Baliza desactivada."; Rescue.draw();
+  },
+  draw() {
+    const box = $("#rsParams"), btn = $("#rsBtn"), armed = Rescue.state === "armed";
+    btn.disabled = Rescue.state !== "idle"; $("#rsDur").disabled = Rescue.state !== "idle";
+    btn.textContent = armed ? "🛡️ Protocolo en curso" : (Rescue.state === "beacon" ? "🆘 Baliza activa" : "🛡️ Activar protocolo");
+    box.replaceChildren();
+    if (!armed) return;
+    const now = Date.now(), left = Math.max(0, Rescue.endAt - now), g = now < Rescue.graceEnd;
+    const mm = String(Math.floor(left / 60000)).padStart(2, "0"), ss = String(Math.floor(left / 1000) % 60).padStart(2, "0");
+    const mot = g ? ["Posiciona el teléfono…", ""] : Rescue.sensorSeen ? ["✔ Inmóvil", "ok"] : Rescue.test ? ["Sin sensor (modo prueba)", ""] : ["Sin sensor", "bad"];
+    const row = (t, v, c) => h("div", { class: "param " + (c || "") }, h("b", {}, t), v);
+    box.append(row("⏱ Cuenta regresiva", `${mm}:${ss}`, "ok"), row("🧍 Inmovilidad (acel./giro)", mot[0], mot[1]),
+      row("🌡️ Presión (barómetro)", "No disponible en navegador: no se evalúa", ""),
+      row("📵 Sin interacción", (g ? "Período de gracia" : "✔ Sin toques") + (document.visibilityState === "hidden" ? " · pantalla oculta" : ""), g ? "" : "ok"));
+  }
 };
 
 /* =====================================================================
  * Renders
  * ===================================================================== */
-function reportItem(m, withDelete) {
-  const badges = h("div", { class: "badges" },
-    h("span", { class: "badge " + m.priority }, PRIORITY[m.priority].label),
-    m.isDemo && h("span", { class: "badge demo" }, "DEMO"),
-    h("span", { class: "badge status" }, STATUS[m.deliveryStatus] || m.deliveryStatus));
-  const meta = [fmtDate(m.createdAt)];
-  if (m.latitude != null) meta.push(`📍 ${(+m.latitude).toFixed(4)}, ${(+m.longitude).toFixed(4)}`);
-  meta.push("saltos: " + m.hopCount);
-  return h("article", { class: `item ${m.priority}${m.deliveryStatus === "expired" ? " expired" : ""}` },
-    h("div", { class: "ic" }, iconFor(m.messageType)),
-    h("div", { class: "body" },
-      h("div", { class: "title" }, m.messageType),
-      h("div", { class: "content" }, m.content),
-      h("div", { class: "meta" }, meta.join(" · ")),
-      badges),
-    withDelete && h("button", {
-      class: "ghost sm", "aria-label": "Eliminar reporte", title: "Eliminar",
-      onclick: () => Events.del(m)
-    }, "🗑️"));
-}
-function fillList(el, items, withDelete, emptyText) {
-  el.replaceChildren();
-  if (!items.length) { el.append(h("div", { class: "empty" }, emptyText)); return; }
-  items.forEach(m => el.append(reportItem(m, withDelete)));
-}
-
 const Renders = {
-  current() {
-    if ($("#view-report").classList.contains("active")) {
-      const s = UI.currentSub();
-      if (s === "list") Renders.list(); else if (s === "sum") Renders.summary();
-    }
+  item(r) {
+    let icon, title, cls;
+    if (r.kind === "status") { icon = STATUS[r.code].icon; title = `${STATUS[r.code].title} · ${STATUS[r.code].sub}`; cls = r.code; }
+    else if (r.kind === "road") { icon = "🛣️"; title = LEVEL[r.level].label; cls = r.level; }
+    else if (r.kind === "hazard") { icon = HAZARD[r.hazardType].icon; title = HAZARD[r.hazardType].label; cls = "red"; }
+    else { icon = "🆘"; title = RESCUE_CODE; cls = "red"; }
+    const meta = [fmtDate(r.createdAt), r.receivedFrom ? "recibido de " + r.receivedFrom : "este dispositivo", "saltos: " + r.hopCount];
+    if (r.lat != null) meta.push(`📍 ${(+r.lat).toFixed(4)}, ${(+r.lng).toFixed(4)}`);
+    return h("article", { class: `item ${cls}${r.deliveryStatus === "expired" ? " expired" : ""}` },
+      h("div", { class: "ic" }, icon),
+      h("div", { class: "body" }, h("div", { class: "t" }, title), h("div", { class: "m" }, meta.join(" · ")),
+        r.isDemo && h("span", { class: "badge demo" }, "DEMO"),
+        r.deliveryStatus === "expired" && h("span", { class: "badge" }, "Expirado")),
+      h("button", { class: "ghost", title: "Eliminar", "aria-label": "Eliminar", style: "width:40px;height:40px;font-size:1.1rem", onclick: () => Renders.del(r) }, "🗑️"));
   },
-  grid() {
-    const g = $("#kwGrid"); g.replaceChildren();
-    KEYWORDS.forEach(k => g.append(h("button", {
-      class: "kw " + k.priority, onclick: () => Events.emit(k),
-      "aria-label": `${k.type} (${PRIORITY[k.priority].label})`
-    }, h("span", { class: "ic" }, k.icon), h("span", {}, k.type))));
+  async del(r) {
+    if (!await UI.confirm("Eliminar", "¿Eliminar este registro? No se puede deshacer.", "Eliminar")) return;
+    try { await Store.remove(r.id); await Data.refresh(); Renders.all(); UI.toast("Eliminado"); } catch (e) { UI.toast("No se pudo eliminar", true); }
   },
-  async list() {
-    await Messages.refresh();
-    fillList($("#reportList"), Messages.filtered(), true, "No hay reportes que coincidan.");
+  bigs() {
+    const g = $("#bigs"); g.replaceChildren();
+    Object.entries(STATUS).forEach(([k, s]) => g.append(h("button", { class: "big " + k, onclick: () => Msgs.send(k), "aria-label": `${s.title}. ${s.sub}` },
+      h("span", { class: "ic" }, s.icon), h("span", {}, s.title), h("small", {}, s.sub))));
   },
-  async summary() {
-    await Messages.refresh();
-    const m = State.msgs, c = CommAdapter.status();
-    const stats = [
-      ["📡", c.label, "Comunicación"],
-      ["💾", m.length, "Almacenados"],
-      ["🔴", m.filter(x => x.priority === "critical").length, "Críticos"],
-      ["📥", m.filter(x => x.receivedFrom).length, "Recibidos"],
-      ["📱", c.peers, "Dispositivos"],
-      ["⏳", m.filter(x => x.deliveryStatus === "stored" || x.deliveryStatus === "pending").length, "Pendientes"]
-    ];
-    const box = $("#stats"); box.replaceChildren();
-    stats.forEach(([i, v, l]) => box.append(h("div", { class: "stat" },
-      h("div", { class: "ic" }, i), h("div", { class: "v" }, v), h("div", { class: "l" }, l))));
-    const recent = [...m].sort((a, b) => b.createdAt - a.createdAt).slice(0, 6);
-    fillList($("#recentList"), recent, false, "Aún no hay reportes.");
-  },
-  async map() {
-    await Messages.refresh();
-    const geo = State.msgs.filter(m => m.latitude != null && m.longitude != null && m.deliveryStatus !== "expired");
-    fillList($("#geoList"), geo, false, "No hay reportes con coordenadas. Permite el GPS al emitir o carga datos demo.");
-    const L = window.L;
-    State.leafletOk = !!(L && L.map) && !window.__leafletFailed;
-    $("#mapWarn").hidden = State.leafletOk;
-    $("#map").style.display = State.leafletOk ? "block" : "none";
-    if (!State.leafletOk) return;
-    try {
-      if (!State.map) {
-        State.map = L.map("map").setView([-19.0333, -65.2627], 12);
-        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-          maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        }).addTo(State.map);
-        State.layer = L.layerGroup().addTo(State.map);
-      }
-      State.layer.clearLayers();
-      const pts = [];
-      geo.forEach(m => {
-        const col = PRIORITY[m.priority].color;
-        const pop = `<b>${iconFor(m.messageType)} ${esc(m.messageType)}</b>${m.isDemo ? " (DEMO)" : ""}<br>${esc(m.content)}<br><small>${esc(fmtDate(m.createdAt))}</small>`;
-        L.circleMarker([m.latitude, m.longitude], { radius: 10, color: "#fff", weight: 2, fillColor: col, fillOpacity: .9 })
-          .bindPopup(pop).addTo(State.layer);
-        pts.push([m.latitude, m.longitude]);
-      });
-      setTimeout(() => {
-        State.map.invalidateSize();
-        if (pts.length) State.map.fitBounds(pts, { padding: [40, 40], maxZoom: 16 });
-      }, 60);
-    } catch (e) {
-      State.leafletOk = false; $("#mapWarn").hidden = false; $("#map").style.display = "none";
+  async all() {
+    await Data.refresh();
+    if ($("#view-map").classList.contains("active")) GMap.render();
+    else {
+      const box = $("#msgList"); box.replaceChildren();
+      const list = Data.recs.filter(r => r.kind === "status" || r.kind === "rescue").sort((a, b) => b.createdAt - a.createdAt);
+      if (!list.length) box.append(h("div", { class: "empty" }, "Aún no hay mensajes."));
+      list.forEach(r => box.append(Renders.item(r)));
     }
   }
 };
 
 /* =====================================================================
- * Eventos
+ * Eventos y arranque
  * ===================================================================== */
-const Events = {
-  async emit(kw) {
-    if (kw.priority === "critical") {
-      const ok = await UI.confirm(`${kw.icon} Alerta CRÍTICA: ${kw.type}`,
-        "¿Confirmas que quieres emitir esta alerta? Se guardará en este dispositivo.", "Emitir alerta");
-      if (!ok) return;
-    }
-    const fb = $("#feedback"); fb.className = ""; fb.textContent = "Guardando…";
-    try {
-      const loc = await Location.get();                 // opcional, no bloquea
-      const msg = Messages.build(kw, loc);
-      const added = await Store.add(msg);
-      CommAdapter.send(msg);                            // no-op en navegador
-      if (!added) { UI.toast("Alerta duplicada, ya existía", true); fb.textContent = "Alerta duplicada."; return; }
-      UI.toast(`${kw.icon} Alerta guardada`);
-      fb.className = "ok";
-      fb.textContent = `✔ "${kw.type}" guardada${loc ? " con ubicación" : " (sin ubicación)"} a las ${new Date().toLocaleTimeString("es-BO", { timeStyle: "short" })}. Solo almacenada en este dispositivo.`;
-    } catch (e) {
-      UI.toast("No se pudo guardar la alerta", true);
-      fb.textContent = "Error al guardar: almacenamiento local no disponible.";
-    }
-  },
-  async del(m) {
-    if (!await UI.confirm("Eliminar reporte", `¿Eliminar "${m.messageType}"? No se puede deshacer.`, "Eliminar")) return;
-    try { await Store.remove(m.messageId); UI.toast("Reporte eliminado"); Renders.current(); }
-    catch (e) { UI.toast("No se pudo eliminar", true); }
-  },
-  async demo() {
-    let n = 0;
-    try { for (const m of Messages.demo()) if (await Store.add(m)) n++; }
-    catch (e) { return UI.toast("No se pudieron cargar los datos demo", true); }
-    UI.toast(n ? `${n} reportes DEMO cargados` : "Los datos demo ya estaban cargados");
-    Renders.summary();
-  },
-  async exportJson() {
-    try {
-      const data = await Store.all();
-      const blob = new Blob([JSON.stringify({ exportedAt: new Date().toISOString(), deviceId: Store.deviceId(), messages: data }, null, 2)], { type: "application/json" });
-      const a = h("a", { href: URL.createObjectURL(blob), download: "reportes-emergencia.json" });
-      document.body.append(a); a.click(); a.remove();
-      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-      UI.toast("JSON exportado");
-    } catch (e) { UI.toast("No se pudo exportar", true); }
-  },
-  bind() {
-    $$("#dock .ghost").forEach(b => b.addEventListener("click", () => UI.showView(b.dataset.view)));
-    $$(".subtabs .ghost").forEach(b => b.addEventListener("click", () => UI.showSub(b.dataset.sub)));
-    ["input", "change"].forEach(ev => {
-      $("#q").addEventListener(ev, Renders.list);
-      $("#fPrio").addEventListener(ev, Renders.list);
-      $("#fSort").addEventListener(ev, Renders.list);
-    });
-    $("#btnDemo").addEventListener("click", Events.demo);
-    $("#btnExport").addEventListener("click", Events.exportJson);
-  }
-};
-
-/* =====================================================================
- * Arranque
- * ===================================================================== */
+function bind() {
+  document.querySelectorAll("#dock .ghost").forEach(b => b.addEventListener("click", () => UI.view(b.dataset.view)));
+  $("#tRoad").addEventListener("click", () => GMap.setTool("road"));
+  $("#tHaz").addEventListener("click", () => GMap.setTool("hazard"));
+  $("#tMe").addEventListener("click", GMap.center);
+  $("#btnExport").addEventListener("click", Mesh.exportFile);
+  $("#btnImport").addEventListener("click", () => $("#fileIn").click());
+  $("#fileIn").addEventListener("change", e => { Mesh.importFile(e.target.files[0]); e.target.value = ""; });
+  $("#btnDemo").addEventListener("click", async () => {
+    let n = 0; try { for (const r of Mesh.demo()) if (await Store.add(r)) n++; } catch (e) { return UI.toast("No se pudieron cargar los datos demo", true); }
+    UI.toast(n ? `${n} registros DEMO cargados` : "Los datos demo ya estaban cargados"); Renders.all();
+  });
+  $("#rsBtn").addEventListener("click", Rescue.arm);
+  $("#bcStop").addEventListener("click", Rescue.stopBeacon);
+  window.addEventListener("online", UI.net); window.addEventListener("offline", UI.net);
+}
 (async function start() {
-  Renders.grid();
-  Events.bind();
-  const ok = await Store.open();
-  if (!ok) UI.toast("Almacenamiento local no disponible", true);
-  else await Messages.refresh();
-  const c = CommAdapter.status();
-  $("#conn .long").textContent = c.label + " · solo almacenamiento local";
+  Renders.bigs(); bind(); UI.net();
+  if (!await Store.open()) UI.toast("Almacenamiento local no disponible", true);
+  await Renders.all();
+  window.addEventListener("load", () => { if ($("#view-map").classList.contains("active")) GMap.render(); });
 })();
 </script>
 </body>
