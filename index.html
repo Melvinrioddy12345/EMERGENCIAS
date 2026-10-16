@@ -1,872 +1,606 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<meta name="theme-color" content="#0f172a" />
-<title>Red de Emergencia Offline</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%9B%9F%3C/text%3E%3C/svg%3E" />
-
-<link rel="stylesheet"
-  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-  integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-  crossorigin="" />
-
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Alertas de Emergencia – Prototipo offline</title>
+<!-- Leaflet: única dependencia externa. Si no carga, la app sigue funcionando con lista alternativa. -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" onerror="window.__leafletFailed=true">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="" onerror="window.__leafletFailed=true"></script>
 <style>
-/* ============================================================
-   Estilos — versión simplificada
-   ============================================================ */
-:root {
-  --bg:        #0f172a;
-  --bg-soft:   #1e293b;
-  --panel:     #1a2332;
-  --border:    #334155;
-  --text:      #e2e8f0;
-  --text-dim:  #94a3b8;
-  --accent:    #38bdf8;
-  --crit:      #ef4444;
-  --high:      #f97316;
-  --moderate:  #64748b;
-  --ok:        #22c55e;
-  --radius:    12px;
-  --dock-h:    64px;
+:root{
+  --bg:#0f172a; --panel:#1a2332; --border:#334155; --text:#e2e8f0; --muted:#94a3b8;
+  --accent:#38bdf8; --crit:#ef4444; --high:#f97316; --mod:#64748b; --ok:#22c55e;
 }
-* { box-sizing: border-box; }
-html, body {
-  margin: 0; padding: 0;
-  background: var(--bg); color: var(--text);
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  font-size: 16px; line-height: 1.45; min-height: 100%;
-}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.4;-webkit-tap-highlight-color:transparent}
+header{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 16px;background:rgba(15,23,42,.95);border-bottom:1px solid var(--border)}
+header h1{font-size:1.05rem;font-weight:700;letter-spacing:.2px}
+.conn{display:flex;align-items:center;gap:8px;font-size:.8rem;color:var(--muted);text-align:right}
+.conn .dot{width:10px;height:10px;border-radius:50%;background:var(--mod);flex:none}
+.conn .long{display:inline}
+.conn .short{display:none}
+main{max-width:1000px;margin:0 auto;padding:16px 16px 110px}
+.view{display:none}
+.view.active{display:block;animation:fade .25s ease}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.notice{background:var(--panel);border:1px solid var(--border);border-left:4px solid var(--accent);border-radius:10px;padding:10px 12px;font-size:.82rem;color:var(--muted);margin-bottom:14px}
+.notice.warn{border-left-color:var(--high)}
+.notice b{color:var(--text)}
 
-/* --------- Header --------- */
-.app-header {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: .7rem 1rem;
-  background: linear-gradient(180deg, #111c33 0%, #0f172a 100%);
-  border-bottom: 1px solid var(--border);
-  position: sticky; top: 0; z-index: 100;
-}
-.brand { display: flex; align-items: center; gap: .6rem; }
-.brand-icon { font-size: 1.5rem; }
-.brand h1 { font-size: 1rem; margin: 0; }
-.conn-status {
-  display: flex; align-items: center; gap: .4rem;
-  font-size: .75rem; color: var(--text-dim);
-  background: var(--bg-soft); padding: .3rem .65rem;
-  border-radius: 999px; border: 1px solid var(--border);
-}
-.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--moderate); }
-.dot--on { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+/* Botones fantasma circulares (solo icono) */
+.ghost{width:52px;height:52px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:1.5rem;color:var(--text);background:rgba(148,163,184,.08);border:1px solid rgba(148,163,184,.35);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);cursor:pointer;transition:all .2s}
+.ghost:hover{background:rgba(148,163,184,.18)}
+.ghost.active{border-color:var(--accent);box-shadow:0 0 14px rgba(56,189,248,.55);background:rgba(56,189,248,.12)}
+.ghost.sm{width:44px;height:44px;font-size:1.2rem}
+.ghost:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.subtabs{display:flex;gap:12px;justify-content:center;margin-bottom:16px}
 
-/* --------- Main --------- */
-.main {
-  padding: 1rem 1rem calc(var(--dock-h) + 1.5rem);
-  max-width: 900px; margin: 0 auto;
-}
-.view { display: none; animation: fade .2s ease; }
-.view.is-active { display: block; }
-@keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+/* Dock inferior */
+#dock{position:fixed;left:0;right:0;bottom:calc(12px + env(safe-area-inset-bottom));display:flex;justify-content:center;gap:22px;pointer-events:none;background:transparent;z-index:30}
+#dock .ghost{pointer-events:auto;width:56px;height:56px;font-size:1.7rem;background:rgba(15,23,42,.45)}
 
-/* --------- Sub-pestañas (iconos) --------- */
-.subtabs {
-  display: flex; justify-content: center; gap: .5rem;
-  margin-bottom: 1.2rem;
-}
-.subtab {
-  width: 46px; height: 46px;
-  display: flex; align-items: center; justify-content: center;
-  background: transparent; color: var(--text-dim);
-  border: 1px solid var(--border); border-radius: 50%;
-  font-size: 1.2rem; cursor: pointer; font-family: inherit;
-  transition: background .15s, color .15s, border-color .15s, transform .05s;
-}
-.subtab:hover { background: var(--bg-soft); color: var(--text); }
-.subtab.is-on { background: var(--accent); color: #06121f; border-color: var(--accent); }
-.subtab:active { transform: scale(.95); }
+/* Rejilla de alertas */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.kw{min-height:104px;border:0;border-radius:14px;color:#fff;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:12px;font-size:1.1rem;font-weight:700;text-align:center;box-shadow:0 2px 6px rgba(0,0,0,.35);transition:transform .12s,filter .15s}
+.kw .ic{font-size:2.2rem;line-height:1}
+.kw:hover{filter:brightness(1.12)}
+.kw:active{transform:scale(.96)}
+.kw:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.kw.critical{background:linear-gradient(145deg,#ef4444,#7f1d1d)}
+.kw.high{background:linear-gradient(145deg,#f97316,#9a3412)}
+.kw.moderate{background:linear-gradient(145deg,#64748b,#334155)}
+#feedback{margin-top:16px;text-align:center;color:var(--muted);font-size:.95rem;min-height:1.5em}
+#feedback.ok{color:var(--ok)}
 
-/* --------- Sub-vistas --------- */
-.subview { display: none; }
-.subview.is-active { display: block; }
+/* Controles de reportes */
+.controls{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.controls input,.controls select{background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:.95rem;min-height:44px}
+.controls input{flex:1 1 180px}
+.list{display:flex;flex-direction:column;gap:10px}
+.item{display:flex;gap:12px;align-items:flex-start;background:var(--panel);border:1px solid var(--border);border-left:5px solid var(--mod);border-radius:12px;padding:12px}
+.item.critical{border-left-color:var(--crit)} .item.high{border-left-color:var(--high)} .item.moderate{border-left-color:var(--mod)}
+.item.expired{opacity:.55}
+.item .ic{font-size:1.8rem}
+.item .body{flex:1;min-width:0}
+.item .title{font-weight:700;font-size:1.02rem}
+.item .content{color:var(--text);font-size:.9rem;margin-top:2px;word-wrap:break-word}
+.item .meta{color:var(--muted);font-size:.78rem;margin-top:4px}
+.badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.badge{font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:999px;border:1px solid var(--border);color:var(--text);text-transform:uppercase;letter-spacing:.3px}
+.badge.critical{background:var(--crit);border-color:var(--crit)}
+.badge.high{background:var(--high);border-color:var(--high)}
+.badge.moderate{background:var(--mod);border-color:var(--mod)}
+.badge.demo{background:#a855f7;border-color:#a855f7}
+.badge.status{color:var(--accent);border-color:var(--accent)}
+.empty{text-align:center;color:var(--muted);padding:28px 10px;border:1px dashed var(--border);border-radius:12px}
 
-/* ============================================================
-   BOTONES DE PALABRAS CLAVE (chips de emergencia)
-   ============================================================ */
-.keywords {
-  display: grid; gap: .7rem;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  margin-top: .5rem;
-}
-.kw {
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: .35rem; min-height: 100px; padding: .8rem .6rem;
-  border-radius: var(--radius); cursor: pointer;
-  border: 2px solid transparent;
-  font-family: inherit; font-weight: 700; font-size: .9rem;
-  color: #fff; text-align: center;
-  transition: transform .06s, filter .15s, box-shadow .15s;
-  box-shadow: 0 3px 10px rgba(0,0,0,.35);
-}
-.kw:hover { filter: brightness(1.08); }
-.kw:active { transform: scale(.97); }
-.kw-ico { font-size: 1.7rem; }
+/* Resumen */
+.stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:14px}
+.stat{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:12px;text-align:center}
+.stat .ic{font-size:1.6rem}
+.stat .v{font-size:1.4rem;font-weight:800;margin-top:2px}
+.stat .l{font-size:.72rem;color:var(--muted)}
+.toolbar{display:flex;gap:12px;justify-content:center;margin:6px 0 16px}
+h2{font-size:.95rem;color:var(--muted);margin:14px 0 8px;font-weight:600}
 
-/* Colores por tipo / prioridad de emergencia */
-.kw[data-prio="CRITICO"]  { background: linear-gradient(160deg, #b91c1c, #7f1d1d); }
-.kw[data-prio="ALTO"]     { background: linear-gradient(160deg, #ea580c, #9a3412); }
-.kw[data-prio="MODERADO"] { background: linear-gradient(160deg, #475569, #334155); }
+/* Mapa */
+#map{height:55vh;min-height:320px;border-radius:12px;border:1px solid var(--border);background:var(--panel)}
+.leaflet-container{background:#0b1220}
 
-/* --------- Feedback tras pulsar --------- */
-.kw-feedback {
-  margin-top: 1rem; padding: .8rem 1rem;
-  background: var(--bg-soft); border: 1px dashed var(--border);
-  border-radius: var(--radius); font-size: .9rem; color: var(--text-dim);
-  text-align: center;
-}
-.kw-feedback strong { color: var(--text); }
+/* Diálogos y toast */
+dialog{margin:auto;background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:14px;padding:20px;max-width:min(92vw,380px)}
+dialog::backdrop{background:rgba(0,0,0,.65)}
+dialog h3{margin-bottom:8px}
+dialog p{color:var(--muted);font-size:.92rem;margin-bottom:16px}
+dialog .row{display:flex;gap:10px;justify-content:flex-end}
+dialog button{min-height:44px;padding:0 18px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:.95rem;cursor:pointer}
+dialog button.danger{background:var(--crit);border-color:var(--crit);font-weight:700}
+#toast{position:fixed;left:50%;bottom:100px;transform:translateX(-50%) translateY(10px);background:var(--ok);color:#052e16;font-weight:700;padding:10px 18px;border-radius:999px;opacity:0;pointer-events:none;transition:all .25s;z-index:50;max-width:90vw;text-align:center}
+#toast.show{opacity:1;transform:translateX(-50%)}
+#toast.err{background:var(--crit);color:#fff}
 
-/* --------- Estadísticas (Resumen) --------- */
-.stats-grid {
-  display: grid; gap: .7rem;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  margin-bottom: 1rem;
-}
-.stat {
-  background: var(--panel); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: .8rem;
-  display: flex; flex-direction: column; gap: .15rem;
-}
-.stat--crit { border-color: var(--crit); }
-.stat-ico { font-size: 1.1rem; }
-.stat-value { font-size: 1.4rem; font-weight: 700; }
-.stat-label { font-size: .72rem; color: var(--text-dim); }
-
-/* --------- Botones fantasma genéricos --------- */
-.btn-ghost {
-  display: inline-flex; align-items: center; gap: .4rem;
-  background: transparent; color: var(--text);
-  border: 1px solid var(--border); border-radius: var(--radius);
-  padding: .55rem .9rem; font-size: .85rem; font-weight: 600;
-  cursor: pointer; font-family: inherit;
-}
-.btn-ghost:hover { background: var(--bg-soft); }
-
-/* --------- Listas --------- */
-.report-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: .6rem; }
-.report-item {
-  background: var(--panel); border: 1px solid var(--border);
-  border-left-width: 5px; border-radius: var(--radius);
-  padding: .75rem .9rem; display: flex; flex-direction: column; gap: .3rem;
-}
-.report-item[data-prio="CRITICO"]  { border-left-color: var(--crit); }
-.report-item[data-prio="ALTO"]     { border-left-color: var(--high); }
-.report-item[data-prio="MODERADO"] { border-left-color: var(--moderate); }
-.report-head { display: flex; justify-content: space-between; gap: .5rem; flex-wrap: wrap; align-items: center; }
-.report-type { font-weight: 700; display: flex; align-items: center; gap: .4rem; flex-wrap: wrap; }
-.report-meta { font-size: .72rem; color: var(--text-dim); }
-.report-content { font-size: .9rem; word-break: break-word; }
-.badge {
-  display: inline-block; font-size: .68rem; font-weight: 700;
-  padding: .12rem .45rem; border-radius: 999px;
-  background: var(--bg-soft); color: var(--text-dim); border: 1px solid var(--border);
-}
-.badge--demo { background: #1e3a8a; color: #cfe3ff; border-color: #1e40af; }
-.icon-btn {
-  background: transparent; border: 1px solid var(--border);
-  color: var(--text-dim); border-radius: 8px;
-  width: 32px; height: 32px; cursor: pointer; font-size: .95rem;
-}
-.icon-btn:hover { background: var(--bg-soft); color: var(--text); }
-
-/* --------- Filtros minimalistas --------- */
-.filters {
-  display: grid; grid-template-columns: 2fr 1fr 1fr;
-  gap: .5rem; margin-bottom: 1rem;
-}
-@media (max-width: 620px) { .filters { grid-template-columns: 1fr; } }
-input, select, textarea {
-  background: var(--bg-soft); color: var(--text);
-  border: 1px solid var(--border); border-radius: var(--radius);
-  padding: .6rem .7rem; font-family: inherit; font-size: .9rem; width: 100%;
-}
-input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
-
-/* --------- Mapa --------- */
-.map { width: 100%; height: 460px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg-soft); }
-
-/* --------- Toasts --------- */
-.toast {
-  position: fixed; bottom: calc(var(--dock-h) + 20px); left: 50%; transform: translateX(-50%);
-  background: var(--bg-soft); color: var(--text);
-  border: 1px solid var(--border); border-radius: var(--radius);
-  padding: .65rem 1rem; font-size: .88rem; box-shadow: 0 4px 14px rgba(0,0,0,.4);
-  z-index: 999; max-width: 90vw;
-}
-.toast--ok  { border-color: var(--ok); }
-.toast--err { border-color: var(--crit); }
-
-/* --------- Dialog --------- */
-.dialog {
-  border: 1px solid var(--border); border-radius: var(--radius);
-  background: var(--panel); color: var(--text); padding: 1.1rem;
-  max-width: 420px; width: 92vw;
-}
-.dialog h3 { margin: 0 0 .5rem; }
-.dialog menu { display: flex; gap: .5rem; justify-content: flex-end; padding: 0; margin: 1rem 0 0; }
-.dialog button {
-  padding: .55rem .9rem; border-radius: 8px; font-weight: 600;
-  border: 1px solid var(--border); background: transparent; color: var(--text);
-  cursor: pointer; font-family: inherit;
-}
-.dialog button[value="ok"] { background: var(--crit); border-color: var(--crit); color: #fff; }
-
-/* ============================================================
-   DOCK INFERIOR — botones fantasma, solo iconos, sin texto
-   ============================================================ */
-.dock {
-  position: fixed; left: 0; right: 0; bottom: 0; height: var(--dock-h);
-  display: flex; justify-content: center; align-items: center; gap: 1.2rem;
-  padding: 0 .8rem;
-  background: transparent;
-  pointer-events: none;      /* deja pasar clics fuera de los botones */
-  z-index: 300;
-}
-.dock-btn {
-  pointer-events: auto;       /* los botones sí reciben clics */
-  width: 52px; height: 52px;
-  display: flex; align-items: center; justify-content: center;
-  background: rgba(15, 23, 42, .35);   /* fantasma: casi transparente */
-  border: 1px solid rgba(148, 163, 184, .35);
-  border-radius: 50%;
-  color: var(--text);
-  font-size: 1.5rem;
-  cursor: pointer;
-  backdrop-filter: blur(6px);
-  transition: background .15s, border-color .15s, transform .05s, box-shadow .15s;
-  box-shadow: 0 3px 12px rgba(0,0,0,.25);
-}
-.dock-btn:hover { background: rgba(30, 41, 59, .55); }
-.dock-btn:active { transform: scale(.94); }
-.dock-btn.is-active {
-  border-color: var(--accent);
-  color: var(--accent);
-  background: rgba(56, 189, 248, .12);
-  box-shadow: 0 0 14px rgba(56, 189, 248, .35);
+@media (max-width:560px){
+  header h1{font-size:.95rem}
+  .conn .long{display:none} .conn .short{display:inline}
+  .grid{grid-template-columns:repeat(2,1fr)}
 }
 </style>
 </head>
 <body>
 
-<header class="app-header">
-  <div class="brand">
-    <span class="brand-icon" aria-hidden="true">🛟</span>
-    <h1>Red de Emergencia</h1>
-  </div>
-  <div class="conn-status" role="status" aria-live="polite">
-    <span class="dot dot--off" id="connDot"></span>
-    <span id="connText">Sin red</span>
+<header>
+  <h1>🆘 Alertas de Emergencia</h1>
+  <div class="conn" id="conn" title="Estado de comunicación entre dispositivos">
+    <span class="dot"></span>
+    <span class="long">Sin red · solo almacenamiento local</span>
+    <span class="short">Sin red</span>
   </div>
 </header>
 
-<main class="main">
-
-  <!-- ============================================================
-       MÓDULO 1 — REPORTE Y ALERTA
-       ============================================================ -->
-  <section class="view is-active" id="view-report">
-
-    <!-- Sub-pestañas solo con iconos -->
-    <nav class="subtabs" aria-label="Secciones">
-      <button class="subtab is-on" data-sub="new"     title="Nueva alerta">🚨</button>
-      <button class="subtab"       data-sub="list"    title="Reportes">📋</button>
-      <button class="subtab"       data-sub="summary" title="Resumen">📊</button>
+<main>
+  <!-- ============ MÓDULO 1: REPORTE Y ALERTA ============ -->
+  <section id="view-report" class="view active">
+    <nav class="subtabs" aria-label="Secciones de reporte y alerta">
+      <button class="ghost active" data-sub="new" aria-label="Nueva alerta" title="Nueva alerta">🚨</button>
+      <button class="ghost" data-sub="list" aria-label="Reportes" title="Reportes">📋</button>
+      <button class="ghost" data-sub="sum" aria-label="Resumen" title="Resumen">📊</button>
     </nav>
 
-    <!-- ---------- Nueva alerta: solo palabras clave ---------- -->
-    <div class="subview is-active" id="sub-new">
-      <div class="keywords" id="keywordGrid"></div>
-      <div class="kw-feedback" id="kwFeedback">
-        Pulsa un botón para emitir la alerta. El color indica la gravedad.
-      </div>
+    <div id="sub-new" class="sub">
+      <div class="notice warn"><b>Limitación:</b> un navegador no puede crear una red Bluetooth/Wi-Fi Direct entre dispositivos ni retransmitir en segundo plano. Las alertas <b>se guardan solo en este dispositivo</b> (en tu navegador) hasta que exista un adaptador nativo.</div>
+      <div class="grid" id="kwGrid"></div>
+      <p id="feedback">Pulsa un botón para emitir la alerta. El color indica la gravedad.</p>
     </div>
 
-    <!-- ---------- Reportes ---------- -->
-    <div class="subview" id="sub-list">
-      <div class="filters">
-        <input type="search" id="filterText" placeholder="🔎 Buscar…" />
-        <select id="filterPriority">
-          <option value="">Prioridad (todas)</option>
-          <option value="CRITICO">🔴 Crítico</option>
-          <option value="ALTO">🟠 Alto</option>
-          <option value="MODERADO">⚪ Moderado</option>
+    <div id="sub-list" class="sub" hidden>
+      <div class="controls">
+        <input type="search" id="q" placeholder="Buscar…" maxlength="60" aria-label="Buscar reportes">
+        <select id="fPrio" aria-label="Filtrar por prioridad">
+          <option value="all">Todas</option><option value="critical">Crítico</option>
+          <option value="high">Alto</option><option value="moderate">Moderado</option>
         </select>
-        <select id="sortBy">
-          <option value="priority">↕ Prioridad</option>
-          <option value="date">🕒 Recientes</option>
-          <option value="type">🔤 Tipo</option>
+        <select id="fSort" aria-label="Ordenar">
+          <option value="priority">Prioridad</option><option value="recent">Recientes</option><option value="type">Tipo</option>
         </select>
       </div>
-      <ul class="report-list" id="allReports"></ul>
+      <div class="list" id="reportList"></div>
     </div>
 
-    <!-- ---------- Resumen ---------- -->
-    <div class="subview" id="sub-summary">
-      <div class="stats-grid">
-        <article class="stat"><span class="stat-ico">📶</span><span class="stat-value" id="statConn">—</span><span class="stat-label">Comunicación</span></article>
-        <article class="stat"><span class="stat-ico">💾</span><span class="stat-value" id="statStored">0</span><span class="stat-label">Almacenados</span></article>
-        <article class="stat stat--crit"><span class="stat-ico">🚨</span><span class="stat-value" id="statCritical">0</span><span class="stat-label">Críticos</span></article>
-        <article class="stat"><span class="stat-ico">📥</span><span class="stat-value" id="statReceived">0</span><span class="stat-label">Recibidos</span></article>
-        <article class="stat"><span class="stat-ico">📱</span><span class="stat-value" id="statPeers">0</span><span class="stat-label">Dispositivos</span></article>
-        <article class="stat"><span class="stat-ico">⏳</span><span class="stat-value" id="statPending">0</span><span class="stat-label">Pendientes</span></article>
+    <div id="sub-sum" class="sub" hidden>
+      <div class="stats" id="stats"></div>
+      <div class="toolbar">
+        <button class="ghost" id="btnDemo" aria-label="Cargar datos demo" title="Datos demo">🧪</button>
+        <button class="ghost" id="btnExport" aria-label="Exportar JSON" title="Exportar JSON">⬇</button>
       </div>
-
-      <div style="display:flex; gap:.5rem; flex-wrap:wrap; margin-bottom:1rem;">
-        <button class="btn-ghost" id="btnLoadDemo">🧪 Datos demo</button>
-        <button class="btn-ghost" id="btnExport">⬇ JSON</button>
-      </div>
-
-      <ul class="report-list" id="recentReports"></ul>
+      <h2>Últimos reportes</h2>
+      <div class="list" id="recentList"></div>
+      <p class="notice" style="margin-top:14px">🔒 Tus datos se guardan solo en este navegador. No se envían a ningún servidor. Los mensajes no verificados no garantizan autenticidad.</p>
     </div>
-
   </section>
 
-  <!-- ============================================================
-       MÓDULO 2 — MAPAS
-       ============================================================ -->
-  <section class="view" id="view-map">
-    <div id="map" class="map" aria-label="Mapa"></div>
-    <p style="font-size:.78rem;color:var(--text-dim);margin-top:.6rem;" id="mapFallback" hidden>
-      ⚠️ Mapa no disponible (sin conexión). Se muestra la lista.
-    </p>
-    <ul class="report-list" id="mapList" style="margin-top:.8rem;"></ul>
+  <!-- ============ MÓDULO 2: MAPAS ============ -->
+  <section id="view-maps" class="view">
+    <div class="notice warn" id="mapWarn" hidden>⚠️ No se pudo cargar el mapa (probablemente no hay Internet). Se muestra la lista de reportes con coordenadas.</div>
+    <div id="map"></div>
+    <h2>Reportes con coordenadas</h2>
+    <div class="list" id="geoList"></div>
   </section>
-
 </main>
 
-<!-- ============================================================
-     DOCK INFERIOR — solo iconos, transparente
-     ============================================================ -->
-<nav class="dock" aria-label="Módulos">
-  <button class="dock-btn is-active" id="dockReport" title="Reporte y Alerta" aria-label="Reporte y Alerta">📋</button>
-  <button class="dock-btn"           id="dockMap"    title="Mapas"             aria-label="Mapas">🗺️</button>
+<!-- Dock inferior: SOLO los 2 módulos -->
+<nav id="dock" aria-label="Módulos">
+  <button class="ghost active" data-view="report" aria-label="Reporte y Alerta" title="Reporte y Alerta">📋</button>
+  <button class="ghost" data-view="maps" aria-label="Mapas" title="Mapas">🗺️</button>
 </nav>
 
-<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
-
-<dialog id="confirmDialog" class="dialog">
+<dialog id="dlg">
   <form method="dialog">
-    <h3 id="dlgTitle">Confirmar</h3>
-    <p id="dlgMsg"></p>
-    <menu>
+    <h3 id="dlgTitle"></h3>
+    <p id="dlgText"></p>
+    <div class="row">
       <button value="cancel">Cancelar</button>
-      <button value="ok">Confirmar</button>
-    </menu>
+      <button value="ok" class="danger" id="dlgOk">Confirmar</button>
+    </div>
   </form>
 </dialog>
-
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-        crossorigin=""></script>
+<div id="toast" role="status" aria-live="polite"></div>
 
 <script>
-/* ============================================================
-   Red de Emergencia Offline — versión simplificada
-   ============================================================ */
+"use strict";
 
-/* --------- Utilidades --------- */
-const $  = (s, r = document) => r.querySelector(s);
+/* =====================================================================
+ * Utilidades generales
+ * ===================================================================== */
+const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
-const uid = () => (crypto.randomUUID && crypto.randomUUID()) ||
-  'id-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
-const fmtDate = (iso) => { try { return new Date(iso).toLocaleString(); } catch { return iso; } };
-const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({
-  '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
-}[c]));
+// Escapa texto antes de usarlo en HTML (p. ej. popups de Leaflet). Preferir textContent / h().
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+// Crea elementos del DOM de forma segura (el texto siempre entra como nodo de texto).
+function h(tag, props, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(props || {})) {
+    if (v == null || v === false) continue;
+    if (k === "class") e.className = v;
+    else if (k.startsWith("on")) e.addEventListener(k.slice(2), v);
+    else e.setAttribute(k, v);
+  }
+  kids.flat().forEach(c => { if (c != null && c !== false) e.append(c.nodeType ? c : document.createTextNode(String(c))); });
+  return e;
+}
+const fmtDate = ts => new Date(ts).toLocaleString("es-BO", { dateStyle: "short", timeStyle: "short" });
+const uuid = () => (crypto.randomUUID ? crypto.randomUUID()
+  : "id-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 10));
 
-/* ============================================================
-   Palabras clave — cada botón ES la alerta
-   ============================================================ */
+/* =====================================================================
+ * Priority: catálogo de palabras clave y prioridades
+ * ===================================================================== */
+const PRIORITY = {
+  critical: { label: "Crítico",  rank: 0, color: "#ef4444" },
+  high:     { label: "Alto",     rank: 1, color: "#f97316" },
+  moderate: { label: "Moderado", rank: 2, color: "#64748b" }
+};
 const KEYWORDS = [
-  { id: 'herido',       label: 'Herido',        icon: '🩸', prio: 'ALTO',     content: 'Persona herida' },
-  { id: 'atrapado',     label: 'Atrapado',      icon: '⛓️', prio: 'CRITICO',  content: 'Persona atrapada' },
-  { id: 'ayuda',        label: 'Ayuda urgente', icon: '🆘', prio: 'CRITICO',  content: 'Necesito ayuda urgente' },
-  { id: 'desaparecido', label: 'Desaparecido',  icon: '🔍', prio: 'ALTO',     content: 'Persona desaparecida' },
-  { id: 'zona',         label: 'Zona peligrosa',icon: '⚠️', prio: 'ALTO',     content: 'Zona peligrosa' },
-  { id: 'ruta',         label: 'Ruta bloqueada',icon: '🚧', prio: 'MODERADO', content: 'Ruta bloqueada' },
-  { id: 'agua',         label: 'Falta agua',    icon: '💧', prio: 'MODERADO', content: 'Falta de agua' },
-  { id: 'alimentos',    label: 'Falta comida',  icon: '🍞', prio: 'MODERADO', content: 'Falta de alimentos' },
-  { id: 'evacuacion',   label: 'Evacuación',    icon: '🚪', prio: 'CRITICO',  content: 'Solicitud de evacuación' },
-  { id: 'incendio',     label: 'Incendio',      icon: '🔥', prio: 'CRITICO',  content: 'Incendio' },
-  { id: 'inundacion',   label: 'Inundación',    icon: '🌊', prio: 'ALTO',     content: 'Inundación' },
-  { id: 'derrumbe',     label: 'Derrumbe',      icon: '🪨', prio: 'CRITICO',  content: 'Derrumbe' },
+  { type: "Herido",         icon: "🩹", priority: "critical" },
+  { type: "Atrapado",       icon: "🆘", priority: "critical" },
+  { type: "Ayuda urgente",  icon: "🚨", priority: "critical" },
+  { type: "Desaparecido",   icon: "🔍", priority: "critical" },
+  { type: "Incendio",       icon: "🔥", priority: "critical" },
+  { type: "Zona peligrosa", icon: "⚠️", priority: "high" },
+  { type: "Ruta bloqueada", icon: "🚧", priority: "high" },
+  { type: "Evacuación",     icon: "🏃", priority: "high" },
+  { type: "Inundación",     icon: "🌊", priority: "high" },
+  { type: "Derrumbe",       icon: "⛰️", priority: "high" },
+  { type: "Falta agua",     icon: "💧", priority: "moderate" },
+  { type: "Falta comida",   icon: "🍞", priority: "moderate" }
 ];
+const iconFor = type => (KEYWORDS.find(k => k.type === type) || { icon: "❗" }).icon;
+const STATUS = { stored: "Almacenado", pending: "Pendiente", relayed: "Retransmitido", confirmed: "Confirmado", expired: "Expirado" };
+const MAX_CONTENT = 200;
+const TTL_MS = 24 * 60 * 60 * 1000;
 
-const PRIO_LABEL = { CRITICO: '🔴 CRÍTICO', ALTO: '🟠 ALTO', MODERADO: '⚪ MODERADO' };
-
-/* ============================================================
-   Store — IndexedDB
-   ============================================================ */
-const Store = (() => {
-  const DB_NAME = 'emergency-offline', DB_VERSION = 1;
-  let dbPromise = null;
-  function open() {
-    if (dbPromise) return dbPromise;
-    dbPromise = new Promise((resolve, reject) => {
-      const req = indexedDB.open(DB_NAME, DB_VERSION);
-      req.onupgradeneeded = (e) => {
-        const db = e.target.result;
-        if (!db.objectStoreNames.contains('messages')) {
-          const s = db.createObjectStore('messages', { keyPath: 'messageId' });
-          s.createIndex('priority', 'priority');
-          s.createIndex('createdAt', 'createdAt');
-        }
+/* =====================================================================
+ * Store: IndexedDB + identidad seudónima (localStorage solo para el id)
+ * ===================================================================== */
+const Store = {
+  db: null, ok: false,
+  open() {
+    return new Promise(resolve => {
+      if (!window.indexedDB) return resolve(false);
+      let req;
+      try { req = indexedDB.open("emergency-alerts", 1); } catch (e) { return resolve(false); }
+      req.onupgradeneeded = () => {
+        const s = req.result.createObjectStore("messages", { keyPath: "messageId" });
+        s.createIndex("createdAt", "createdAt");
       };
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = () => reject(req.error);
+      req.onsuccess = () => { Store.db = req.result; Store.ok = true; resolve(true); };
+      req.onerror = () => resolve(false);
+      req.onblocked = () => resolve(false);
     });
-    return dbPromise;
+  },
+  tx(mode, fn) {
+    return new Promise((resolve, reject) => {
+      if (!Store.ok) return reject(new Error("IndexedDB no disponible"));
+      try {
+        const t = Store.db.transaction("messages", mode);
+        const out = fn(t.objectStore("messages"));
+        t.oncomplete = () => resolve(out && "result" in out ? out.result : undefined);
+        t.onerror = t.onabort = () => reject(t.error || new Error("Error de transacción"));
+      } catch (e) { reject(e); }
+    });
+  },
+  all() { return Store.tx("readonly", s => s.getAll()); },
+  async add(msg) {            // devuelve false si es duplicado por messageId
+    const existing = await Store.tx("readonly", s => s.get(msg.messageId));
+    if (existing) return false;
+    await Store.tx("readwrite", s => s.add(msg));
+    return true;
+  },
+  put(msg) { return Store.tx("readwrite", s => s.put(msg)); },
+  remove(id) { return Store.tx("readwrite", s => s.delete(id)); },
+  deviceId() {
+    try {
+      let id = localStorage.getItem("deviceId");
+      if (!id) { id = "peer-" + Math.random().toString(36).slice(2, 8); localStorage.setItem("deviceId", id); }
+      return id;
+    } catch (e) { return "peer-local"; }
   }
-  async function st(name, mode = 'readonly') {
-    const db = await open();
-    return db.transaction(name, mode).objectStore(name);
-  }
-  return {
-    async putMessage(m) { const s = await st('messages','readwrite');
-      return new Promise((r,j)=>{const q=s.put(m);q.onsuccess=()=>r(m);q.onerror=()=>j(q.error);}); },
-    async getMessage(id) { const s = await st('messages');
-      return new Promise((r,j)=>{const q=s.get(id);q.onsuccess=()=>r(q.result||null);q.onerror=()=>j(q.error);}); },
-    async allMessages() { const s = await st('messages');
-      return new Promise((r,j)=>{const q=s.getAll();q.onsuccess=()=>r(q.result||[]);q.onerror=()=>j(q.error);}); },
-    async deleteMessage(id) { const s = await st('messages','readwrite');
-      return new Promise((r,j)=>{const q=s.delete(id);q.onsuccess=()=>r(true);q.onerror=()=>j(q.error);}); },
-  };
-})();
+};
 
-/* ============================================================
-   Messages
-   ============================================================ */
-const Messages = (() => {
-  const MAX_HOPS = 5;
-  const DEFAULT_TTL_MS = 1000 * 60 * 60 * 24;
+/* =====================================================================
+ * Messages: creación, expiración, estado en memoria
+ * ===================================================================== */
+const State = { msgs: [], map: null, layer: null, leafletOk: false };
 
-  function make({ type, content, priority, latitude, longitude, locationText, isDemo = false }) {
-    const now = new Date();
-    return {
-      messageId: uid(),
-      originId: getOriginId(),
-      createdAt: now.toISOString(),
-      priority,
-      messageType: type,
-      content: String(content || '').slice(0, 200),
-      latitude:  typeof latitude  === 'number' ? latitude  : null,
-      longitude: typeof longitude === 'number' ? longitude : null,
-      locationText: locationText ? String(locationText).slice(0, 80) : null,
-      hopCount: 0,
-      expiresAt: new Date(now.getTime() + DEFAULT_TTL_MS).toISOString(),
-      deliveryStatus: 'stored',
-      isDemo,
-      receivedFrom: null,
-    };
-  }
-  async function save(msg) {
-    const existing = await Store.getMessage(msg.messageId);
-    if (existing) return { duplicate: true, message: existing };
-    await Store.putMessage(msg);
-    return { duplicate: false, message: msg };
-  }
-  async function markExpired() {
-    const all = await Store.allMessages();
+const Messages = {
+  async refresh() {
+    try {
+      await Messages.expireOld();
+      State.msgs = await Store.all();
+    } catch (e) { State.msgs = []; UI.toast("No se pudo leer el almacenamiento local", true); }
+  },
+  // Marca como "expired" los mensajes cuyo expiresAt ya pasó.
+  async expireOld() {
     const now = Date.now();
-    for (const m of all) {
-      if (m.deliveryStatus !== 'expired' && Date.parse(m.expiresAt) < now) {
-        m.deliveryStatus = 'expired';
-        await Store.putMessage(m);
+    const list = await Store.all();
+    for (const m of list) {
+      if (m.expiresAt <= now && m.deliveryStatus !== "expired") {
+        m.deliveryStatus = "expired";
+        await Store.put(m);
       }
     }
+  },
+  build(kw, loc) {
+    const now = Date.now();
+    return {
+      messageId: uuid(),
+      originId: Store.deviceId(),
+      createdAt: now,
+      priority: kw.priority,
+      messageType: kw.type,
+      content: (kw.content || kw.type).slice(0, MAX_CONTENT),
+      latitude: loc ? loc.latitude : null,
+      longitude: loc ? loc.longitude : null,
+      locationText: loc ? "GPS" : "",
+      hopCount: 0,
+      expiresAt: now + TTL_MS,
+      deliveryStatus: "stored",
+      isDemo: false,
+      receivedFrom: null
+    };
+  },
+  filtered() {
+    const q = $("#q").value.trim().toLowerCase();
+    const p = $("#fPrio").value, sort = $("#fSort").value;
+    let list = State.msgs.filter(m =>
+      (p === "all" || m.priority === p) &&
+      (!q || (m.messageType + " " + m.content).toLowerCase().includes(q)));
+    const byDate = (a, b) => b.createdAt - a.createdAt;
+    if (sort === "priority") list.sort((a, b) => PRIORITY[a.priority].rank - PRIORITY[b.priority].rank || byDate(a, b));
+    else if (sort === "type") list.sort((a, b) => a.messageType.localeCompare(b.messageType, "es") || byDate(a, b));
+    else list.sort(byDate);
+    return list;
+  },
+  demo() {
+    const base = { lat: -19.0333, lng: -65.2627 }, now = Date.now();
+    const rows = [
+      ["demo-1", "Herido", "critical", "Persona herida en plaza (ejemplo)", 0.004, -0.003],
+      ["demo-2", "Ruta bloqueada", "high", "Camino cortado por derrumbe (ejemplo)", -0.006, 0.005],
+      ["demo-3", "Falta agua", "moderate", "Barrio sin agua potable (ejemplo)", 0.009, 0.007],
+      ["demo-4", "Atrapado", "critical", "Persona atrapada en vivienda (ejemplo)", -0.003, -0.008]
+    ];
+    return rows.map(([id, type, priority, content, dLat, dLng], i) => ({
+      messageId: id, originId: "peer-demo", createdAt: now - i * 600000, priority, messageType: type,
+      content, latitude: base.lat + dLat, longitude: base.lng + dLng, locationText: "DEMO",
+      hopCount: 0, expiresAt: now + TTL_MS, deliveryStatus: "stored", isDemo: true, receivedFrom: null
+    }));
   }
-  return { make, save, markExpired, MAX_HOPS };
-})();
+};
 
-function getOriginId() {
-  let id = localStorage.getItem('eo-origin');
-  if (!id) { id = 'peer-' + Math.random().toString(36).slice(2, 8); localStorage.setItem('eo-origin', id); }
-  return id;
-}
-
-/* ============================================================
-   Priority
-   ============================================================ */
-const Priority = (() => {
-  const rank = { CRITICO: 0, ALTO: 1, MODERADO: 2 };
-  function sort(list, by = 'priority') {
-    const a = [...list];
-    if (by === 'date') return a.sort((x,y)=>Date.parse(y.createdAt)-Date.parse(x.createdAt));
-    if (by === 'type') return a.sort((x,y)=>x.messageType.localeCompare(y.messageType));
-    return a.sort((x,y)=>{
-      const d = rank[x.priority]-rank[y.priority];
-      return d !== 0 ? d : Date.parse(y.createdAt)-Date.parse(x.createdAt);
+/* =====================================================================
+ * Location: GPS silencioso (opcional, nunca bloquea)
+ * ===================================================================== */
+const Location = {
+  get() {
+    return new Promise(resolve => {
+      if (!navigator.geolocation) return resolve(null);
+      let done = false;
+      const finish = v => { if (!done) { done = true; resolve(v); } };
+      setTimeout(() => finish(null), 5000);
+      try {
+        navigator.geolocation.getCurrentPosition(
+          p => finish({ latitude: +p.coords.latitude.toFixed(5), longitude: +p.coords.longitude.toFixed(5) }),
+          () => finish(null),
+          { enableHighAccuracy: true, timeout: 4500, maximumAge: 60000 });
+      } catch (e) { finish(null); }
     });
   }
-  return { sort };
-})();
-
-/* ============================================================
-   Location + CommAdapter (stubs honestos)
-   ============================================================ */
-const Location = {
-  requestGPS: () => new Promise((res, rej) => {
-    if (!('geolocation' in navigator)) return rej(new Error('sin geolocalización'));
-    navigator.geolocation.getCurrentPosition(
-      p => res({ lat: p.coords.latitude, lng: p.coords.longitude }),
-      rej, { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
-    );
-  })
 };
+
+/* =====================================================================
+ * CommAdapter: punto de integración para transporte entre dispositivos
+ * ---------------------------------------------------------------------
+ * LIMITACIÓN HONESTA: los navegadores NO exponen Bluetooth mesh, Wi-Fi
+ * Direct ni retransmisión en segundo plano. Este prototipo NO transmite
+ * nada. En una app nativa (Android/iOS) aquí se integraría un adaptador
+ * que implemente esta interfaz usando Nearby Connections / Bluetooth LE /
+ * Wi-Fi Direct, y que actualice deliveryStatus (pending → relayed →
+ * confirmed), hopCount y receivedFrom.
+ * ===================================================================== */
 const CommAdapter = {
-  status: () => ({
-    available: false,
-    peers: [],
-    reason: 'El navegador no expone Bluetooth mesh / Wi-Fi Direct.',
-  })
+  status() { return { connected: false, label: "Sin red", peers: 0 }; },
+  send(/* msg */)   { /* no-op: sin transporte disponible en el navegador */ return false; },
+  onReceive(/* cb */) { /* no-op: nunca se reciben mensajes sin adaptador nativo */ }
 };
 
-/* ============================================================
-   UI
-   ============================================================ */
-const UI = (() => {
-  let t = null;
-  function toast(msg, kind = '') {
-    const el = $('#toast');
-    el.textContent = msg;
-    el.className = 'toast ' + (kind ? 'toast--' + kind : '');
-    el.hidden = false;
-    clearTimeout(t); t = setTimeout(() => { el.hidden = true; }, 2800);
-  }
-  function confirm(msg, title = 'Confirmar') {
+/* =====================================================================
+ * UI: toast, diálogo de confirmación, navegación
+ * ===================================================================== */
+const UI = {
+  toastTimer: null,
+  toast(text, err) {
+    const t = $("#toast");
+    t.textContent = text; t.classList.toggle("err", !!err); t.classList.add("show");
+    clearTimeout(UI.toastTimer);
+    UI.toastTimer = setTimeout(() => t.classList.remove("show"), 2500);
+  },
+  confirm(title, text, okLabel) {
+    const dlg = $("#dlg");
+    if (!dlg.showModal) return Promise.resolve(window.confirm(title + "\n\n" + text));
+    $("#dlgTitle").textContent = title;
+    $("#dlgText").textContent = text;
+    $("#dlgOk").textContent = okLabel || "Confirmar";
     return new Promise(resolve => {
-      const dlg = $('#confirmDialog');
-      $('#dlgTitle').textContent = title;
-      $('#dlgMsg').textContent = msg;
-      const onClose = () => { dlg.removeEventListener('close', onClose); resolve(dlg.returnValue === 'ok'); };
-      dlg.addEventListener('close', onClose);
-      dlg.returnValue = 'cancel';
+      dlg.addEventListener("close", () => resolve(dlg.returnValue === "ok"), { once: true });
       dlg.showModal();
     });
-  }
-  return { toast, confirm };
-})();
+  },
+  showView(name) {
+    $$("#dock .ghost").forEach(b => b.classList.toggle("active", b.dataset.view === name));
+    $$(".view").forEach(v => v.classList.toggle("active", v.id === "view-" + name));
+    if (name === "maps") Renders.map(); else Renders.current();
+  },
+  showSub(name) {
+    $$(".subtabs .ghost").forEach(b => b.classList.toggle("active", b.dataset.sub === name));
+    $$(".sub").forEach(s => s.hidden = s.id !== "sub-" + name);
+    Renders.current();
+  },
+  currentSub() { return ($(".subtabs .ghost.active") || {}).dataset?.sub || "new"; }
+};
 
-/* ============================================================
-   Navegación
-   ============================================================ */
-function switchModule(name) {
-  $$('.view').forEach(v => v.classList.toggle('is-active', v.id === 'view-' + name));
-  $('#dockReport').classList.toggle('is-active', name === 'report');
-  $('#dockMap').classList.toggle('is-active', name === 'map');
-  if (name === 'map') setTimeout(initMap, 60);
-  if (name === 'report') renderAllReports();
+/* =====================================================================
+ * Renders
+ * ===================================================================== */
+function reportItem(m, withDelete) {
+  const badges = h("div", { class: "badges" },
+    h("span", { class: "badge " + m.priority }, PRIORITY[m.priority].label),
+    m.isDemo && h("span", { class: "badge demo" }, "DEMO"),
+    h("span", { class: "badge status" }, STATUS[m.deliveryStatus] || m.deliveryStatus));
+  const meta = [fmtDate(m.createdAt)];
+  if (m.latitude != null) meta.push(`📍 ${(+m.latitude).toFixed(4)}, ${(+m.longitude).toFixed(4)}`);
+  meta.push("saltos: " + m.hopCount);
+  return h("article", { class: `item ${m.priority}${m.deliveryStatus === "expired" ? " expired" : ""}` },
+    h("div", { class: "ic" }, iconFor(m.messageType)),
+    h("div", { class: "body" },
+      h("div", { class: "title" }, m.messageType),
+      h("div", { class: "content" }, m.content),
+      h("div", { class: "meta" }, meta.join(" · ")),
+      badges),
+    withDelete && h("button", {
+      class: "ghost sm", "aria-label": "Eliminar reporte", title: "Eliminar",
+      onclick: () => Events.del(m)
+    }, "🗑️"));
 }
-function switchSub(name) {
-  $$('.subview').forEach(v => v.classList.toggle('is-active', v.id === 'sub-' + name));
-  $$('.subtab').forEach(t => t.classList.toggle('is-on', t.dataset.sub === name));
-  if (name === 'list') renderAllReports();
-  if (name === 'summary') renderSummary();
-}
-
-/* ============================================================
-   Render — Grid de palabras clave
-   ============================================================ */
-function renderKeywords() {
-  const grid = $('#keywordGrid');
-  grid.innerHTML = '';
-  KEYWORDS.forEach(k => {
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.className = 'kw';
-    b.dataset.prio = k.prio;
-    b.dataset.id = k.id;
-    b.innerHTML = `<span class="kw-ico">${k.icon}</span><span>${esc(k.label)}</span>`;
-    b.addEventListener('click', () => emitFromKeyword(k));
-    grid.appendChild(b);
-  });
-}
-
-/* ============================================================
-   Emitir alerta desde una palabra clave
-   ============================================================ */
-async function emitFromKeyword(k) {
-  if (k.prio === 'CRITICO') {
-    const ok = await UI.confirm(`Vas a emitir una alerta CRÍTICA: “${k.label}”. ¿Confirmas?`, 'Alerta crítica');
-    if (!ok) return;
-  }
-
-  // Intentar GPS silenciosamente (no bloquea si falla o se rechaza)
-  let geo = { lat: null, lng: null };
-  try { geo = await Location.requestGPS(); } catch { /* sin GPS, seguimos */ }
-
-  const msg = Messages.make({
-    type: k.id,
-    content: k.content,
-    priority: k.prio,
-    latitude: geo.lat,
-    longitude: geo.lng,
-    locationText: null,
-  });
-
-  try {
-    await Messages.save(msg);
-    const gpsTxt = geo.lat != null ? ' · 📍 GPS incluido' : '';
-    UI.toast(`Alerta emitida: ${k.label}${gpsTxt}`, 'ok');
-    const fb = $('#kwFeedback');
-    fb.innerHTML =
-      `✅ Registrado: <strong>${esc(k.label)}</strong> — ${PRIO_LABEL[k.prio]}` +
-      (geo.lat != null ? ` · 📍 ${geo.lat.toFixed(4)}, ${geo.lng.toFixed(4)}` : ' · sin GPS');
-    renderSummary();
-    renderAllReports();
-  } catch (err) {
-    UI.toast('Error al guardar: ' + err.message, 'err');
-  }
+function fillList(el, items, withDelete, emptyText) {
+  el.replaceChildren();
+  if (!items.length) { el.append(h("div", { class: "empty" }, emptyText)); return; }
+  items.forEach(m => el.append(reportItem(m, withDelete)));
 }
 
-/* ============================================================
-   Render — Resumen
-   ============================================================ */
-async function renderSummary() {
-  await Messages.markExpired();
-  const all = await Store.allMessages();
-  const pending  = all.filter(m => m.deliveryStatus === 'stored' || m.deliveryStatus === 'pending');
-  const critical = all.filter(m => m.priority === 'CRITICO' && m.deliveryStatus !== 'expired');
-  const received = all.filter(m => !!m.receivedFrom);
-
-  $('#statConn').textContent     = CommAdapter.status().available ? 'Activo' : 'Sin red';
-  $('#statStored').textContent   = all.length;
-  $('#statCritical').textContent = critical.length;
-  $('#statReceived').textContent = received.length;
-  $('#statPeers').textContent    = CommAdapter.status().peers.length;
-  $('#statPending').textContent  = pending.length;
-
-  const recent = Priority.sort(all, 'date').slice(0, 6);
-  const ul = $('#recentReports');
-  ul.innerHTML = recent.length ? '' : '<li class="report-item">Sin reportes todavía.</li>';
-  recent.forEach(m => ul.appendChild(renderReportItem(m)));
-}
-
-/* ============================================================
-   Render — Item de reporte
-   ============================================================ */
-function renderReportItem(m, opts = {}) {
-  const li = document.createElement('li');
-  li.className = 'report-item';
-  li.dataset.prio = m.priority;
-  li.dataset.id = m.messageId;
-
-  const kw = KEYWORDS.find(k => k.id === m.messageType);
-  const icon = kw?.icon || '📍';
-  const label = kw?.label || m.messageType;
-
-  const statusLabel = {
-    stored: 'Almacenado', pending: 'Pendiente',
-    relayed: 'Retransmitido', confirmed: 'Confirmado', expired: 'Expirado',
-  }[m.deliveryStatus] || m.deliveryStatus;
-
-  const metaParts = [
-    `${fmtDate(m.createdAt)}`,
-    (m.latitude != null && m.longitude != null)
-      ? `📍 ${m.latitude.toFixed(4)}, ${m.longitude.toFixed(4)}` : null,
-    `saltos ${m.hopCount}/${Messages.MAX_HOPS}`,
-  ].filter(Boolean);
-
-  li.innerHTML = `
-    <div class="report-head">
-      <div class="report-type">
-        <span>${icon}</span>
-        <span>${esc(label)}</span>
-        <span class="badge">${PRIO_LABEL[m.priority]}</span>
-        ${m.isDemo ? '<span class="badge badge--demo">DEMO</span>' : ''}
-        <span class="badge">${esc(statusLabel)}</span>
-      </div>
-      ${opts.showDelete ? `<button class="icon-btn" data-act="del" data-id="${esc(m.messageId)}" title="Eliminar">🗑️</button>` : ''}
-    </div>
-    <div class="report-meta">${esc(metaParts.join(' · '))}</div>
-    <div class="report-content">${esc(m.content)}</div>
-  `;
-  return li;
-}
-
-async function renderAllReports() {
-  await Messages.markExpired();
-  const all = await Store.allMessages();
-
-  const q  = $('#filterText').value.trim().toLowerCase();
-  const fp = $('#filterPriority').value;
-  const sortBy = $('#sortBy').value;
-
-  let list = all.filter(m => {
-    if (fp && m.priority !== fp) return false;
-    if (q) {
-      const kw = KEYWORDS.find(k => k.id === m.messageType);
-      const hay = ((m.content||'') + ' ' + (kw?.label || '') + ' ' + m.messageType).toLowerCase();
-      if (!hay.includes(q)) return false;
+const Renders = {
+  current() {
+    if ($("#view-report").classList.contains("active")) {
+      const s = UI.currentSub();
+      if (s === "list") Renders.list(); else if (s === "sum") Renders.summary();
     }
-    return true;
-  });
-  list = Priority.sort(list, sortBy);
-
-  const ul = $('#allReports');
-  ul.innerHTML = list.length ? '' : '<li class="report-item">Sin resultados.</li>';
-  list.forEach(m => ul.appendChild(renderReportItem(m, { showDelete: true })));
-}
-
-/* ============================================================
-   Mapa
-   ============================================================ */
-let mapInstance = null, mapMarkers = [];
-async function initMap() {
-  const el = $('#map'), fallback = $('#mapFallback');
-  if (typeof L === 'undefined') {
-    el.style.display = 'none';
-    fallback.hidden = false;
-    renderMapList();
-    return;
-  }
-  el.style.display = '';
-  fallback.hidden = true;
-
-  if (!mapInstance) {
-    mapInstance = L.map('map').setView([14.6349, -90.5069], 12);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19, attribution: '&copy; OpenStreetMap contributors',
-    }).addTo(mapInstance);
-  }
-  mapMarkers.forEach(mk => mapInstance.removeLayer(mk));
-  mapMarkers = [];
-
-  const all = await Store.allMessages();
-  const withGeo = all.filter(m => m.latitude != null && m.longitude != null);
-
-  withGeo.forEach(m => {
-    const color = m.priority === 'CRITICO' ? '#ef4444'
-      : m.priority === 'ALTO' ? '#f97316' : '#64748b';
-    const mk = L.circleMarker([m.latitude, m.longitude], {
-      radius: 9, color, fillColor: color, fillOpacity: .85, weight: 2,
-    }).addTo(mapInstance);
-    const kw = KEYWORDS.find(k => k.id === m.messageType);
-    mk.bindPopup(
-      `<strong>${kw?.icon || ''} ${esc(kw?.label || m.messageType)}</strong><br>` +
-      `${esc(m.content)}<br><small>${fmtDate(m.createdAt)}</small>`
-    );
-    mapMarkers.push(mk);
-  });
-  if (withGeo.length) {
-    try { mapInstance.fitBounds(L.featureGroup(mapMarkers).getBounds().pad(0.2)); } catch {}
-  }
-  renderMapList(withGeo);
-}
-
-function renderMapList(list) {
-  const ul = $('#mapList');
-  ul.innerHTML = '';
-  if (!list) {
-    Store.allMessages().then(all => {
-      const withGeo = all.filter(m => m.latitude != null && m.longitude != null);
-      renderMapList(withGeo);
-    });
-    return;
-  }
-  if (!list.length) {
-    ul.innerHTML = '<li class="report-item">Ningún reporte tiene GPS.</li>';
-    return;
-  }
-  list.forEach(m => ul.appendChild(renderReportItem(m)));
-}
-
-/* ============================================================
-   Demo + Export
-   ============================================================ */
-async function loadDemo() {
-  const samples = ['herido', 'ruta', 'agua', 'atrapado'].map(id => KEYWORDS.find(k => k.id === id));
-  for (const k of samples) {
-    const m = Messages.make({
-      type: k.id, content: k.content, priority: k.prio, isDemo: true,
-    });
-    await Messages.save(m);
-  }
-  UI.toast('Datos demo cargados.', 'ok');
-  renderSummary(); renderAllReports();
-}
-async function exportJSON() {
-  const messages = await Store.allMessages();
-  const payload = {
-    exportedAt: new Date().toISOString(),
-    originId: getOriginId(),
-    messages,
-    note: 'Prototipo — datos locales, sin transmisión real.',
-  };
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = `emergency-${Date.now()}.json`; a.click();
-  URL.revokeObjectURL(url);
-  UI.toast('Exportación descargada.', 'ok');
-}
-
-/* ============================================================
-   Estado de conexión
-   ============================================================ */
-function updateConnStatus() {
-  const s = CommAdapter.status();
-  const dot = $('#connDot'), txt = $('#connText');
-  if (s.available && s.peers.length) {
-    dot.classList.add('dot--on'); txt.textContent = `${s.peers.length} cerca`;
-  } else {
-    dot.classList.remove('dot--on'); txt.textContent = 'Sin red';
-  }
-}
-
-/* ============================================================
-   Eventos globales
-   ============================================================ */
-function bindGlobalEvents() {
-  $('#dockReport').addEventListener('click', () => switchModule('report'));
-  $('#dockMap').addEventListener('click',    () => switchModule('map'));
-
-  $$('.subtab').forEach(t =>
-    t.addEventListener('click', () => switchSub(t.dataset.sub))
-  );
-
-  document.body.addEventListener('click', async (e) => {
-    const act = e.target.closest('[data-act]');
-    if (!act) return;
-    if (act.dataset.act === 'del') {
-      const ok = await UI.confirm('¿Eliminar este reporte?', 'Eliminar');
-      if (ok) {
-        await Store.deleteMessage(act.dataset.id);
-        UI.toast('Reporte eliminado.', 'ok');
-        renderSummary(); renderAllReports();
+  },
+  grid() {
+    const g = $("#kwGrid"); g.replaceChildren();
+    KEYWORDS.forEach(k => g.append(h("button", {
+      class: "kw " + k.priority, onclick: () => Events.emit(k),
+      "aria-label": `${k.type} (${PRIORITY[k.priority].label})`
+    }, h("span", { class: "ic" }, k.icon), h("span", {}, k.type))));
+  },
+  async list() {
+    await Messages.refresh();
+    fillList($("#reportList"), Messages.filtered(), true, "No hay reportes que coincidan.");
+  },
+  async summary() {
+    await Messages.refresh();
+    const m = State.msgs, c = CommAdapter.status();
+    const stats = [
+      ["📡", c.label, "Comunicación"],
+      ["💾", m.length, "Almacenados"],
+      ["🔴", m.filter(x => x.priority === "critical").length, "Críticos"],
+      ["📥", m.filter(x => x.receivedFrom).length, "Recibidos"],
+      ["📱", c.peers, "Dispositivos"],
+      ["⏳", m.filter(x => x.deliveryStatus === "stored" || x.deliveryStatus === "pending").length, "Pendientes"]
+    ];
+    const box = $("#stats"); box.replaceChildren();
+    stats.forEach(([i, v, l]) => box.append(h("div", { class: "stat" },
+      h("div", { class: "ic" }, i), h("div", { class: "v" }, v), h("div", { class: "l" }, l))));
+    const recent = [...m].sort((a, b) => b.createdAt - a.createdAt).slice(0, 6);
+    fillList($("#recentList"), recent, false, "Aún no hay reportes.");
+  },
+  async map() {
+    await Messages.refresh();
+    const geo = State.msgs.filter(m => m.latitude != null && m.longitude != null && m.deliveryStatus !== "expired");
+    fillList($("#geoList"), geo, false, "No hay reportes con coordenadas. Permite el GPS al emitir o carga datos demo.");
+    const L = window.L;
+    State.leafletOk = !!(L && L.map) && !window.__leafletFailed;
+    $("#mapWarn").hidden = State.leafletOk;
+    $("#map").style.display = State.leafletOk ? "block" : "none";
+    if (!State.leafletOk) return;
+    try {
+      if (!State.map) {
+        State.map = L.map("map").setView([-19.0333, -65.2627], 12);
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(State.map);
+        State.layer = L.layerGroup().addTo(State.map);
       }
+      State.layer.clearLayers();
+      const pts = [];
+      geo.forEach(m => {
+        const col = PRIORITY[m.priority].color;
+        const pop = `<b>${iconFor(m.messageType)} ${esc(m.messageType)}</b>${m.isDemo ? " (DEMO)" : ""}<br>${esc(m.content)}<br><small>${esc(fmtDate(m.createdAt))}</small>`;
+        L.circleMarker([m.latitude, m.longitude], { radius: 10, color: "#fff", weight: 2, fillColor: col, fillOpacity: .9 })
+          .bindPopup(pop).addTo(State.layer);
+        pts.push([m.latitude, m.longitude]);
+      });
+      setTimeout(() => {
+        State.map.invalidateSize();
+        if (pts.length) State.map.fitBounds(pts, { padding: [40, 40], maxZoom: 16 });
+      }, 60);
+    } catch (e) {
+      State.leafletOk = false; $("#mapWarn").hidden = false; $("#map").style.display = "none";
     }
-  });
+  }
+};
 
-  $('#btnLoadDemo')?.addEventListener('click', loadDemo);
-  $('#btnExport')?.addEventListener('click', exportJSON);
+/* =====================================================================
+ * Eventos
+ * ===================================================================== */
+const Events = {
+  async emit(kw) {
+    if (kw.priority === "critical") {
+      const ok = await UI.confirm(`${kw.icon} Alerta CRÍTICA: ${kw.type}`,
+        "¿Confirmas que quieres emitir esta alerta? Se guardará en este dispositivo.", "Emitir alerta");
+      if (!ok) return;
+    }
+    const fb = $("#feedback"); fb.className = ""; fb.textContent = "Guardando…";
+    try {
+      const loc = await Location.get();                 // opcional, no bloquea
+      const msg = Messages.build(kw, loc);
+      const added = await Store.add(msg);
+      CommAdapter.send(msg);                            // no-op en navegador
+      if (!added) { UI.toast("Alerta duplicada, ya existía", true); fb.textContent = "Alerta duplicada."; return; }
+      UI.toast(`${kw.icon} Alerta guardada`);
+      fb.className = "ok";
+      fb.textContent = `✔ "${kw.type}" guardada${loc ? " con ubicación" : " (sin ubicación)"} a las ${new Date().toLocaleTimeString("es-BO", { timeStyle: "short" })}. Solo almacenada en este dispositivo.`;
+    } catch (e) {
+      UI.toast("No se pudo guardar la alerta", true);
+      fb.textContent = "Error al guardar: almacenamiento local no disponible.";
+    }
+  },
+  async del(m) {
+    if (!await UI.confirm("Eliminar reporte", `¿Eliminar "${m.messageType}"? No se puede deshacer.`, "Eliminar")) return;
+    try { await Store.remove(m.messageId); UI.toast("Reporte eliminado"); Renders.current(); }
+    catch (e) { UI.toast("No se pudo eliminar", true); }
+  },
+  async demo() {
+    let n = 0;
+    try { for (const m of Messages.demo()) if (await Store.add(m)) n++; }
+    catch (e) { return UI.toast("No se pudieron cargar los datos demo", true); }
+    UI.toast(n ? `${n} reportes DEMO cargados` : "Los datos demo ya estaban cargados");
+    Renders.summary();
+  },
+  async exportJson() {
+    try {
+      const data = await Store.all();
+      const blob = new Blob([JSON.stringify({ exportedAt: new Date().toISOString(), deviceId: Store.deviceId(), messages: data }, null, 2)], { type: "application/json" });
+      const a = h("a", { href: URL.createObjectURL(blob), download: "reportes-emergencia.json" });
+      document.body.append(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+      UI.toast("JSON exportado");
+    } catch (e) { UI.toast("No se pudo exportar", true); }
+  },
+  bind() {
+    $$("#dock .ghost").forEach(b => b.addEventListener("click", () => UI.showView(b.dataset.view)));
+    $$(".subtabs .ghost").forEach(b => b.addEventListener("click", () => UI.showSub(b.dataset.sub)));
+    ["input", "change"].forEach(ev => {
+      $("#q").addEventListener(ev, Renders.list);
+      $("#fPrio").addEventListener(ev, Renders.list);
+      $("#fSort").addEventListener(ev, Renders.list);
+    });
+    $("#btnDemo").addEventListener("click", Events.demo);
+    $("#btnExport").addEventListener("click", Events.exportJson);
+  }
+};
 
-  $('#filterText').addEventListener('input', renderAllReports);
-  $('#filterPriority').addEventListener('change', renderAllReports);
-  $('#sortBy').addEventListener('change', renderAllReports);
-}
-
-/* ============================================================
-   Arranque
-   ============================================================ */
-async function boot() {
-  renderKeywords();
-  bindGlobalEvents();
-  updateConnStatus();
-  await renderSummary();
-  renderAllReports();
-  console.info('[Red de Emergencia]', CommAdapter.status());
-}
-document.addEventListener('DOMContentLoaded', boot);
+/* =====================================================================
+ * Arranque
+ * ===================================================================== */
+(async function start() {
+  Renders.grid();
+  Events.bind();
+  const ok = await Store.open();
+  if (!ok) UI.toast("Almacenamiento local no disponible", true);
+  else await Messages.refresh();
+  const c = CommAdapter.status();
+  $("#conn .long").textContent = c.label + " · solo almacenamiento local";
+})();
 </script>
 </body>
 </html>
