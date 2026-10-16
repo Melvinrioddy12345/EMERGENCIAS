@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>EcoAceite | Recolección y reutilización de aceite doméstico</title>
+
+<!-- Leaflet CSS -->
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+  crossorigin=""
+/>
+
+<style>
+  /* ============ RESET & VARIABLES ============ */
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  :root {
+    --verde-principal: #2e7d32;
+    --verde-claro: #66bb6a;
+    --verde-suave: #e8f5e9;
+    --amarillo-aceite: #f9a825;
+    --gris-oscuro: #1b1b1b;
+    --gris-medio: #555;
+    --gris-claro: #f4f6f4;
+    --blanco: #ffffff;
+    --sombra: 0 4px 20px rgba(0, 0, 0, 0.08);
+    --radio: 14px;
+    --transicion: 0.3s ease;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    background: var(--gris-claro);
+    color: var(--gris-oscuro);
+    line-height: 1.6;
+  }
+
+  /* ============ HEADER / NAV ============ */
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  }
+
+  nav {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 800;
+    font-size: 1.35rem;
+    color: var(--verde-principal);
+    letter-spacing: -0.5px;
+  }
+
+  .logo span {
+    display: inline-flex;
+    width: 38px;
+    height: 38px;
+    background: linear-gradient(135deg, var(--verde-principal), var(--verde-claro));
+    border-radius: 12px;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    color: white;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 28px;
+    list-style: none;
+  }
+
+  .nav-links a {
+    text-decoration: none;
+    color: var(--gris-medio);
+    font-weight: 500;
+    transition: var(--transicion);
+    font-size: 0.95rem;
+  }
+
+  .nav-links a:hover {
+    color: var(--verde-principal);
+  }
+
+  .btn-cta {
+    background: var(--verde-principal);
+    color: white;
+    border: none;
+    padding: 10px 22px;
+    border-radius: 50px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transicion);
+    font-size: 0.9rem;
+  }
+
+  .btn-cta:hover {
+    background: #1b5e20;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(46, 125, 50, 0.3);
+  }
+
+  /* ============ HERO ============ */
+  .hero {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 70px 24px 40px;
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 50px;
+    align-items: center;
+  }
+
+  .hero-text h1 {
+    font-size: 3rem;
+    line-height: 1.15;
+    font-weight: 800;
+    letter-spacing: -1.5px;
+    margin-bottom: 20px;
+  }
+
+  .hero-text h1 em {
+    color: var(--verde-principal);
+    font-style: normal;
+    position: relative;
+  }
+
+  .hero-text h1 em::after {
+    content: "";
+    position: absolute;
+    bottom: 4px;
+    left: 0;
+    width: 100%;
+    height: 12px;
+    background: rgba(249, 168, 37, 0.25);
+    z-index: -1;
+    border-radius: 4px;
+  }
+
+  .hero-text p {
+    font-size: 1.1rem;
+    color: var(--gris-medio);
+    margin-bottom: 30px;
+    max-width: 520px;
+  }
+
+  .hero-buttons {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+
+  .btn-primary {
+    background: var(--verde-principal);
+    color: white;
+    padding: 14px 30px;
+    border: none;
+    border-radius: 50px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transicion);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-primary:hover {
+    background: #1b5e20;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(46, 125, 50, 0.3);
+  }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--verde-principal);
+    padding: 14px 30px;
+    border: 2px solid var(--verde-principal);
+    border-radius: 50px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transicion);
+  }
+
+  .btn-secondary:hover {
+    background: var(--verde-suave);
+    transform: translateY(-2px);
+  }
+
+  /* ============ STATS ============ */
+  .stats {
+    display: flex;
+    gap: 30px;
+    margin-top: 40px;
+    flex-wrap: wrap;
+  }
+
+  .stat-item h3 {
+    font-size: 1.8rem;
+    color: var(--verde-principal);
+    font-weight: 800;
+    letter-spacing: -1px;
+  }
+
+  .stat-item p {
+    font-size: 0.85rem;
+    color: var(--gris-medio);
+    margin: 0;
+  }
+
+  /* ============ ILUSTRACIÓN HERO ============ */
+  .hero-illustration {
+    background: linear-gradient(135deg, var(--verde-suave), #f1f8e9);
+    border-radius: 24px;
+    padding: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 340px;
+    box-shadow: var(--sombra);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-illustration::before {
+    content: "";
+    position: absolute;
+    width: 200px;
+    height: 200px;
+    background: rgba(249, 168, 37, 0.12);
+    border-radius: 50%;
+    top: -60px;
+    right: -60px;
+  }
+
+  .hero-illustration .emoji-big {
+    font-size: 7rem;
+    position: relative;
+    z-index: 2;
+    animation: float 3s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-14px); }
+  }
+
+  /* ============ SECCIONES GENERALES ============ */
+  section {
+    padding: 70px 24px;
+  }
+
+  .section-header {
+    text-align: center;
+    max-width: 700px;
+    margin: 0 auto 50px;
+  }
+
+  .section-header h2 {
+    font-size: 2.2rem;
+    font-weight: 800;
+    letter-spacing: -1px;
+    margin-bottom: 14px;
+  }
+
+  .section-header p {
+    color: var(--gris-medio);
+    font-size: 1.05rem;
+  }
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  /* ============ MAPA ============ */
+  #map {
+    height: 500px;
+    border-radius: var(--radio);
+    box-shadow: var(--sombra);
+    z-index: 1;
+  }
+
+  .map-wrapper {
+    position: relative;
+  }
+
+  .map-info-card {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: white;
+    padding: 18px 22px;
+    border-radius: var(--radio);
+    box-shadow: var(--sombra);
+    z-index: 500;
+    max-width: 260px;
+  }
+
+  .map-info-card h4 {
+    font-size: 0.95rem;
+    margin-bottom: 6px;
+    color: var(--verde-principal);
+  }
+
+  .map-info-card p {
+    font-size: 0.82rem;
+    color: var(--gris-medio);
+    margin-bottom: 12px;
+  }
+
+  .map-info-card button {
+    background: var(--verde-principal);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 50px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+    transition: var(--transicion);
+  }
+
+  .map-info-card button:hover {
+    background: #1b5e20;
+  }
+
+  /* ============ CÓMO FUNCIONA ============ */
+  .steps-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 26px;
+  }
+
+  .step-card {
+    background: white;
+    padding: 34px 28px;
+    border-radius: var(--radio);
+    box-shadow: var(--sombra);
+    transition: var(--transicion);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .step-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 12px 34px rgba(0, 0, 0, 0.12);
+  }
+
+  .step-card .step-number {
+    position: absolute;
+    top: 18px;
+    right: 22px;
+    font-size: 3rem;
+    font-weight: 800;
+    color: var(--verde-suave);
+    line-height: 1;
+  }
+
+  .step-card .step-icon {
+    font-size: 2.4rem;
+    margin-bottom: 16px;
+    display: block;
+  }
+
+  .step-card h3 {
+    font-size: 1.15rem;
+    margin-bottom: 10px;
+    font-weight: 700;
+  }
+
+  .step-card p {
+    font-size: 0.92rem;
+    color: var(--gris-medio);
+  }
+
+  /* ============ BENEFICIOS ============ */
+  .benefits-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 26px;
+  }
+
+  .benefit-card {
+    background: white;
+    border-radius: var(--radio);
+    padding: 32px 28px;
+    box-shadow: var(--sombra);
+    border-left: 5px solid var(--verde-principal);
+    transition: var(--transicion);
+  }
+
+  .benefit-card:hover {
+    transform: translateX(6px);
+  }
+
+  .benefit-card .icon {
+    font-size: 2rem;
+    margin-bottom: 14px;
+    display: block;
+  }
+
+  .benefit-card h3 {
+    font-size: 1.1rem;
+    margin-bottom: 8px;
+  }
+
+  .benefit-card p {
+    font-size: 0.9rem;
+    color: var(--gris-medio);
+  }
+
+  /* ============ FORMULARIO ============ */
+  .form-section {
+    background: linear-gradient(135deg, var(--verde-principal), #1b5e20);
+    color: white;
+  }
+
+  .form-section .section-header h2,
+  .form-section .section-header p {
+    color: white;
+  }
+
+  .form-section .section-header p {
+    opacity: 0.85;
+  }
+
+  .form-card {
+    background: white;
+    border-radius: 20px;
+    padding: 40px;
+    max-width: 700px;
+    margin: 0 auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .form-group.full {
+    grid-column: 1 / -1;
+  }
+
+  .form-group label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--gris-oscuro);
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    padding: 12px 16px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    transition: var(--transicion);
+    background: var(--gris-claro);
+  }
+
+  .form-group input:focus,
+  .form-group select:focus,
+  .form-group textarea:focus {
+    outline: none;
+    border-color: var(--verde-principal);
+    background: white;
+  }
+
+  .form-group textarea {
+    resize: vertical;
+    min-height: 90px;
+  }
+
+  .btn-submit {
+    width: 100%;
+    background: var(--verde-principal);
+    color: white;
+    border: none;
+    padding: 16px;
+    border-radius: 50px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: var(--transicion);
+    margin-top: 10px;
+  }
+
+  .btn-submit:hover {
+    background: #1b5e20;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(46, 125, 50, 0.4);
+  }
+
+  /* ============ TOAST ============ */
+  .toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(120px);
+    background: var(--gris-oscuro);
+    color: white;
+    padding: 16px 28px;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    z-index: 9999;
+    transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .toast.show {
+    transform: translateX(-50%) translateY(0);
+  }
+
+  .toast.success {
+    background: var(--verde-principal);
+  }
+
+  /* ============ FOOTER ============ */
+  footer {
+    background: var(--gris-oscuro);
+    color: #bdbdbd;
+    padding: 50px 24px 30px;
+  }
+
+  .footer-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 40px;
+    margin-bottom: 40px;
+  }
+
+  .footer-brand .logo {
+    color: white;
+    margin-bottom: 14px;
+  }
+
+  .footer-brand p {
+    font-size: 0.9rem;
+    max-width: 320px;
+    line-height: 1.7;
+  }
+
+  .footer-col h4 {
+    color: white;
+    font-size: 0.95rem;
+    margin-bottom: 16px;
+  }
+
+  .footer-col ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .footer-col a {
+    color: #bdbdbd;
+    text-decoration: none;
+    font-size: 0.88rem;
+    transition: var(--transicion);
+  }
+
+  .footer-col a:hover {
+    color: var(--verde-claro);
+  }
+
+  .footer-bottom {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding-top: 24px;
+    border-top: 1px solid #333;
+    text-align: center;
+    font-size: 0.82rem;
+    color: #888;
+  }
+
+  /* ============ RESPONSIVE ============ */
+  @media (max-width: 900px) {
+    .hero {
+      grid-template-columns: 1fr;
+      padding-top: 40px;
+      gap: 30px;
+    }
+
+    .hero-text h1 {
+      font-size: 2.2rem;
+    }
+
+    .hero-illustration {
+      min-height: 240px;
+    }
+
+    .hero-illustration .emoji-big {
+      font-size: 5rem;
+    }
+
+    .nav-links {
+      display: none;
+    }
+
+    .footer-content {
+      grid-template-columns: 1fr;
+      gap: 30px;
+    }
+
+    .form-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .map-info-card {
+      position: static;
+      max-width: 100%;
+      margin-top: 16px;
+    }
+
+    #map {
+      height: 380px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .hero-text h1 {
+      font-size: 1.8rem;
+    }
+
+    .section-header h2 {
+      font-size: 1.6rem;
+    }
+
+    .form-card {
+      padding: 26px 20px;
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ HEADER ============ -->
+<header>
+  <nav>
+    <div class="logo">
+      <span>♻️</span> EcoAceite
+    </div>
+    <ul class="nav-links">
+      <li><a href="#mapa">Mapa</a></li>
+      <li><a href="#como-funciona">Cómo funciona</a></li>
+      <li><a href="#beneficios">Beneficios</a></li>
+      <li><a href="#registro">Registro</a></li>
+    </ul>
+    <button class="btn-cta" onclick="document.getElementById('registro').scrollIntoView()">
+      Únete ahora
+    </button>
+  </nav>
+</header>
+
+<!-- ============ HERO ============ -->
+<section class="hero">
+  <div class="hero-text">
+    <h1>Convierte tu <em>aceite usado</em> en un recurso valioso</h1>
+    <p>
+      EcoAceite conecta hogares y restaurantes que generan aceite de cocina usado
+      con recolectores y empresas que lo transforman en biocombustibles y nuevos productos.
+      ¡Reciclar nunca fue tan fácil!
+    </p>
+    <div class="hero-buttons">
+      <button class="btn-primary" onclick="document.getElementById('mapa').scrollIntoView()">
+        📍 Ver puntos de recolección
+      </button>
+      <button class="btn-secondary" onclick="document.getElementById('registro').scrollIntoView()">
+        Quiero recolectar
+      </button>
+    </div>
+    <div class="stats">
+      <div class="stat-item">
+        <h3>1.2M</h3>
+        <p>Litros recuperados</p>
+      </div>
+      <div class="stat-item">
+        <h3>8,400+</h3>
+        <p>Hogares activos</p>
+      </div>
+      <div class="stat-item">
+        <h3>320</h3>
+        <p>Restaurantes aliados</p>
+      </div>
+    </div>
+  </div>
+  <div class="hero-illustration">
+    <div class="emoji-big">🛢️</div>
+  </div>
+</section>
+
+<!-- ============ MAPA ============ -->
+<section id="mapa" style="background: white;">
+  <div class="container">
+    <div class="section-header">
+      <h2>Puntos de recolección cercanos</h2>
+      <p>Encuentra el punto EcoAceite más próximo y deposita tu aceite usado de forma segura.</p>
+    </div>
+    <div class="map-wrapper">
+      <div id="map"></div>
+      <div class="map-info-card">
+        <h4>♻️ Puntos activos</h4>
+        <p id="puntosCount">Cargando puntos...</p>
+        <button onclick="centrarMapa()">Centrar mapa</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CÓMO FUNCIONA ============ -->
+<section id="como-funciona">
+  <div class="container">
+    <div class="section-header">
+      <h2>¿Cómo funciona EcoAceite?</h2>
+      <p>Cuatro pasos simples para transformar tu aceite usado en impacto positivo.</p>
+    </div>
+    <div class="steps-grid">
+      <div class="step-card">
+        <span class="step-number">01</span>
+        <span class="step-icon">📝</span>
+        <h3>Regístrate</h3>
+        <p>Crea tu cuenta como hogar, restaurante o recolector en menos de 2 minutos.</p>
+      </div>
+      <div class="step-card">
+        <span class="step-number">02</span>
+        <span class="step-icon">🛢️</span>
+        <h3>Almacena</h3>
+        <p>Guarda el aceite usado en una botella o recipiente limpio y bien cerrado.</p>
+      </div>
+      <div class="step-card">
+        <span class="step-number">03</span>
+        <span class="step-icon">📍</span>
+        <h3>Localiza</h3>
+        <p>Encuentra el punto de recolección más cercano en nuestro mapa interactivo.</p>
+      </div>
+      <div class="step-card">
+        <span class="step-number">04</span>
+        <span class="step-icon">🚚</span>
+        <h3>Entrega</h3>
+        <p>Lleva tu aceite o solicita recolección a domicilio. ¡Gana recompensas verdes!</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ BENEFICIOS ============ -->
+<section id="beneficios" style="background: white;">
+  <div class="container">
+    <div class="section-header">
+      <h2>Beneficios de reciclar aceite</h2>
+      <p>Un pequeño gesto que genera un gran impacto ambiental, económico y social.</p>
+    </div>
+    <div class="benefits-grid">
+      <div class="benefit-card">
+        <span class="icon">🌊</span>
+        <h3>Protege el agua</h3>
+        <p>Un litro de aceite puede contaminar hasta 1,000 litros de agua. Reciclarlo evita ese daño.</p>
+      </div>
+      <div class="benefit-card">
+        <span class="icon">🌱</span>
+        <h3>Reduce emisiones</h3>
+        <p>El aceite reciclado se convierte en biocombustible, reduciendo gases de efecto invernadero.</p>
+      </div>
+      <div class="benefit-card">
+        <span class="icon">💰</span>
+        <h3>Genera ingresos</h3>
+        <p>Recibe recompensas económicas o descuentos por cada litro de aceite que entregues.</p>
+      </div>
+      <div class="benefit-card">
+        <span class="icon">🍳</span>
+        <h3>Nuevos productos</h3>
+        <p>El aceite reutilizado se transforma en jabones, velas, pinturas y biodiesel.</p>
+      </div>
+      <div class="benefit-card">
+        <span class="icon">🤝</span>
+        <h3>Comunidad</h3>
+        <p>Conecta con vecinos, recolectores y empresas comprometidas con el medio ambiente.</p>
+      </div>
+      <div class="benefit-card">
+        <span class="icon">🏙️</span>
+        <h3>Ciudades limpias</h3>
+        <p>Menos aceite en desagües significa menos obstrucciones y ciudades más saludables.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FORMULARIO ============ -->
+<section id="registro" class="form-section">
+  <div class="container">
+    <div class="section-header">
+      <h2>Únete a EcoAceite</h2>
+      <p>Registra tu hogar, restaurante o servicio de recolección y empieza a generar impacto.</p>
+    </div>
+    <div class="form-card">
+      <form id="registroForm">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="nombre">Nombre completo *</label>
+            <input type="text" id="nombre" required placeholder="Ej. María López" />
+          </div>
+          <div class="form-group">
+            <label for="email">Correo electrónico *</label>
+            <input type="email" id="email" required placeholder="tucorreo@ejemplo.com" />
+          </div>
+          <div class="form-group">
+            <label for="telefono">Teléfono *</label>
+            <input type="tel" id="telefono" required placeholder="+591 700 00000" />
+          </div>
+          <div class="form-group">
+            <label for="tipo">Tipo de usuario *</label>
+            <select id="tipo" required>
+              <option value="">Selecciona una opción</option>
+              <option value="hogar">🏠 Hogar</option>
+              <option value="restaurante">🍽️ Restaurante</option>
+              <option value="recolector">🚚 Recolector</option>
+              <option value="empresa">🏭 Empresa reutilizadora</option>
+            </select>
+          </div>
+          <div class="form-group full">
+            <label for="direccion">Dirección</label>
+            <input type="text" id="direccion" placeholder="Calle, número, ciudad" />
+          </div>
+          <div class="form-group full">
+            <label for="mensaje">Mensaje (opcional)</label>
+            <textarea id="mensaje" placeholder="Cuéntanos cuánto aceite generas aproximadamente..."></textarea>
+          </div>
+        </div>
+        <button type="submit" class="btn-submit">Registrarme en EcoAceite ♻️</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FOOTER ============ -->
+<footer>
+  <div class="footer-content">
+    <div class="footer-brand">
+      <div class="logo"><span>♻️</span> EcoAceite</div>
+      <p>Plataforma que conecta hogares, restaurantes, recolectores y empresas para dar una segunda vida al aceite de cocina usado.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Plataforma</h4>
+      <ul>
+        <li><a href="#mapa">Mapa de puntos</a></li>
+        <li><a href="#como-funciona">Cómo funciona</a></li>
+        <li><a href="#beneficios">Beneficios</a></li>
+        <li><a href="#registro">Registro</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Contacto</h4>
+      <ul>
+        <li><a href="mailto:hola@ecoaceite.org">hola@ecoaceite.org</a></li>
+        <li><a href="#">+591 700 00000</a></li>
+        <li><a href="#">Sucre, Bolivia</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    © 2025 EcoAceite. Hecho con 💚 para un planeta más limpio.
+  </div>
+</footer>
+
+<!-- Toast -->
+<div class="toast" id="toast">
+  <span id="toastIcon">✅</span>
+  <span id="toastMsg">Mensaje</span>
+</div>
+
+<!-- Leaflet JS -->
+<script
+  src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+  crossorigin=""
+></script>
+
+<script>
+/* ============================================================
+   DATOS: Puntos de recolección (coordenadas enviadas)
+   ============================================================ */
+const puntosRecoleccion = [
+  {
+    nombre: "Punto Centro Histórico",
+    coords: [-19.033295, -65.254140],
+    direccion: "Zona Centro, Sucre",
+    capacidad: "Alta"
+  },
+  {
+    nombre: "Punto Mercado Central",
+    coords: [-19.043923, -65.259429],
+    direccion: "Cercano al Mercado Central",
+    capacidad: "Media"
+  },
+  {
+    nombre: "Punto Plaza Principal",
+    coords: [-19.040054, -65.255234],
+    direccion: "Plaza 25 de Mayo",
+    capacidad: "Alta"
+  },
+  {
+    nombre: "Punto Zona Recoleta",
+    coords: [-19.046159, -65.245917],
+    direccion: "Zona Recoleta",
+    capacidad: "Media"
+  },
+  {
+    nombre: "Punto Zona Norte",
+    coords: [-19.032754, -65.262837],
+    direccion: "Zona Norte",
+    capacidad: "Baja"
+  },
+  {
+    nombre: "Punto Zona Sur",
+    coords: [-19.030441, -65.247935],
+    direccion: "Zona Sur",
+    capacidad: "Alta"
+  }
+];
+
+/* ============================================================
+   INICIALIZACIÓN DEL MAPA
+   ============================================================ */
+let map;
+let markers = [];
+
+function initMap() {
+  // Centro promedio de las coordenadas
+  const centro = [-19.037, -65.254];
+
+  map = L.map("map").setView(centro, 15);
+
+  // Capa de OpenStreetMap
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contribuidores'
+  }).addTo(map);
+
+  // Icono personalizado verde
+  const iconoVerde = L.divIcon({
+    className: "custom-marker",
+    html: `
+      <div style="
+        background: #2e7d32;
+        width: 34px;
+        height: 34px;
+        border-radius: 50% 50% 50% 0;
+        transform: rotate(-45deg);
+        border: 3px solid white;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      ">
+        <span style="
+          transform: rotate(45deg);
+          font-size: 16px;
+        ">♻️</span>
+      </div>
+    `,
+    iconSize: [34, 34],
+    iconAnchor: [17, 34],
+    popupAnchor: [0, -34]
+  });
+
+  // Agregar marcadores
+  puntosRecoleccion.forEach((punto, index) => {
+    const marker = L.marker(punto.coords, { icon: iconoVerde }).addTo(map);
+
+    marker.bindPopup(`
+      <div style="font-family: 'Segoe UI', sans-serif; min-width: 200px;">
+        <h3 style="margin: 0 0 8px; color: #2e7d32; font-size: 1rem;">${punto.nombre}</h3>
+        <p style="margin: 0 0 6px; font-size: 0.85rem; color: #555;">📍 ${punto.direccion}</p>
+        <p style="margin: 0 0 6px; font-size: 0.85rem; color: #555;">
+          <strong>Capacidad:</strong> ${punto.capacidad}
+        </p>
+        <p style="margin: 0; font-size: 0.8rem; color: #777;">
+          Lat: ${punto.coords[0].toFixed(6)}<br>
+          Lng: ${punto.coords[1].toFixed(6)}
+        </p>
+        <button
+          onclick="alert('¡Gracias por elegir ${punto.nombre}! Te esperamos.')"
+          style="
+            margin-top: 10px;
+            background: #2e7d32;
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+          ">
+          Quiero ir aquí
+        </button>
+      </div>
+    `);
+
+    markers.push(marker);
+  });
+
+  // Ajustar vista a todos los marcadores
+  const group = L.featureGroup(markers);
+  map.fitBounds(group.getBounds().pad(0.2));
+
+  // Contador de puntos
+  document.getElementById("puntosCount").textContent =
+    `${puntosRecoleccion.length} puntos activos disponibles`;
+}
+
+/* ============================================================
+   CENTRAR MAPA
+   ============================================================ */
+function centrarMapa() {
+  if (markers.length > 0) {
+    const group = L.featureGroup(markers);
+    map.fitBounds(group.getBounds().pad(0.2));
+  }
+}
+
+/* ============================================================
+   TOAST
+   ============================================================ */
+function mostrarToast(mensaje, tipo = "success") {
+  const toast = document.getElementById("toast");
+  const toastMsg = document.getElementById("toastMsg");
+  const toastIcon = document.getElementById("toastIcon");
+
+  toastMsg.textContent = mensaje;
+  toastIcon.textContent = tipo === "success" ? "✅" : "⚠️";
+  toast.className = `toast ${tipo} show`;
+
+  setTimeout(() => {
+    toast.classList.remove("show");
+  }, 3500);
+}
+
+/* ============================================================
+   FORMULARIO
+   ============================================================ */
+document.getElementById("registroForm").addEventListener("submit", function (e) {
+  e.preventDefault();
+
+  const nombre = document.getElementById("nombre").value.trim();
+  const email = document.getElementById("email").value.trim();
+  const telefono = document.getElementById("telefono").value.trim();
+  const tipo = document.getElementById("tipo").value;
+
+  if (!nombre || !email || !telefono || !tipo) {
+    mostrarToast("Por favor completa todos los campos obligatorios.", "error");
+    return;
+  }
+
+  // Simulación de envío
+  mostrarToast(`¡Gracias, ${nombre}! Tu registro como ${tipo} fue exitoso.`);
+
+  this.reset();
+
+  // Scroll suave al mapa después de registrarse
+  setTimeout(() => {
+    document.getElementById("mapa").scrollIntoView({ behavior: "smooth" });
+  }, 1200);
+});
+
+/* ============================================================
+   INICIALIZAR TODO AL CARGAR
+   ============================================================ */
+window.addEventListener("load", () => {
+  initMap();
+});
+</script>
+
+</body>
+</html>
