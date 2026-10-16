@@ -2,10 +2,12 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>EcoAceite | Recolección y reutilización de aceite doméstico</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#0f172a" />
+<title>Red de Emergencia Offline</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%9B%9F%3C/text%3E%3C/svg%3E" />
 
-<!-- Leaflet CSS -->
+<!-- Leaflet (opcional) -->
 <link
   rel="stylesheet"
   href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -14,1104 +16,1237 @@
 />
 
 <style>
-  /* ============ RESET & VARIABLES ============ */
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
-
-  :root {
-    --verde-principal: #2e7d32;
-    --verde-claro: #66bb6a;
-    --verde-suave: #e8f5e9;
-    --amarillo-aceite: #f9a825;
-    --gris-oscuro: #1b1b1b;
-    --gris-medio: #555;
-    --gris-claro: #f4f6f4;
-    --blanco: #ffffff;
-    --sombra: 0 4px 20px rgba(0, 0, 0, 0.08);
-    --radio: 14px;
-    --transicion: 0.3s ease;
-  }
-
-  html {
-    scroll-behavior: smooth;
-  }
-
-  body {
-    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
-    background: var(--gris-claro);
-    color: var(--gris-oscuro);
-    line-height: 1.6;
-  }
-
-  /* ============ HEADER / NAV ============ */
-  header {
-    position: sticky;
-    top: 0;
-    z-index: 1000;
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
-  }
-
-  nav {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 14px 24px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .logo {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-weight: 800;
-    font-size: 1.35rem;
-    color: var(--verde-principal);
-    letter-spacing: -0.5px;
-  }
-
-  .logo span {
-    display: inline-flex;
-    width: 38px;
-    height: 38px;
-    background: linear-gradient(135deg, var(--verde-principal), var(--verde-claro));
-    border-radius: 12px;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.2rem;
-    color: white;
-  }
-
-  .nav-links {
-    display: flex;
-    gap: 28px;
-    list-style: none;
-  }
-
-  .nav-links a {
-    text-decoration: none;
-    color: var(--gris-medio);
-    font-weight: 500;
-    transition: var(--transicion);
-    font-size: 0.95rem;
-  }
-
-  .nav-links a:hover {
-    color: var(--verde-principal);
-  }
-
-  .btn-cta {
-    background: var(--verde-principal);
-    color: white;
-    border: none;
-    padding: 10px 22px;
-    border-radius: 50px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: var(--transicion);
-    font-size: 0.9rem;
-  }
-
-  .btn-cta:hover {
-    background: #1b5e20;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 18px rgba(46, 125, 50, 0.3);
-  }
-
-  /* ============ HERO ============ */
-  .hero {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 70px 24px 40px;
-    display: grid;
-    grid-template-columns: 1.1fr 0.9fr;
-    gap: 50px;
-    align-items: center;
-  }
-
-  .hero-text h1 {
-    font-size: 3rem;
-    line-height: 1.15;
-    font-weight: 800;
-    letter-spacing: -1.5px;
-    margin-bottom: 20px;
-  }
-
-  .hero-text h1 em {
-    color: var(--verde-principal);
-    font-style: normal;
-    position: relative;
-  }
-
-  .hero-text h1 em::after {
-    content: "";
-    position: absolute;
-    bottom: 4px;
-    left: 0;
-    width: 100%;
-    height: 12px;
-    background: rgba(249, 168, 37, 0.25);
-    z-index: -1;
-    border-radius: 4px;
-  }
-
-  .hero-text p {
-    font-size: 1.1rem;
-    color: var(--gris-medio);
-    margin-bottom: 30px;
-    max-width: 520px;
-  }
-
-  .hero-buttons {
-    display: flex;
-    gap: 14px;
-    flex-wrap: wrap;
-  }
-
-  .btn-primary {
-    background: var(--verde-principal);
-    color: white;
-    padding: 14px 30px;
-    border: none;
-    border-radius: 50px;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: var(--transicion);
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .btn-primary:hover {
-    background: #1b5e20;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(46, 125, 50, 0.3);
-  }
-
-  .btn-secondary {
-    background: transparent;
-    color: var(--verde-principal);
-    padding: 14px 30px;
-    border: 2px solid var(--verde-principal);
-    border-radius: 50px;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: var(--transicion);
-  }
-
-  .btn-secondary:hover {
-    background: var(--verde-suave);
-    transform: translateY(-2px);
-  }
-
-  /* ============ STATS ============ */
-  .stats {
-    display: flex;
-    gap: 30px;
-    margin-top: 40px;
-    flex-wrap: wrap;
-  }
-
-  .stat-item h3 {
-    font-size: 1.8rem;
-    color: var(--verde-principal);
-    font-weight: 800;
-    letter-spacing: -1px;
-  }
-
-  .stat-item p {
-    font-size: 0.85rem;
-    color: var(--gris-medio);
-    margin: 0;
-  }
-
-  /* ============ ILUSTRACIÓN HERO ============ */
-  .hero-illustration {
-    background: linear-gradient(135deg, var(--verde-suave), #f1f8e9);
-    border-radius: 24px;
-    padding: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 340px;
-    box-shadow: var(--sombra);
-    position: relative;
-    overflow: hidden;
-  }
-
-  .hero-illustration::before {
-    content: "";
-    position: absolute;
-    width: 200px;
-    height: 200px;
-    background: rgba(249, 168, 37, 0.12);
-    border-radius: 50%;
-    top: -60px;
-    right: -60px;
-  }
-
-  .hero-illustration .emoji-big {
-    font-size: 7rem;
-    position: relative;
-    z-index: 2;
-    animation: float 3s ease-in-out infinite;
-  }
-
-  @keyframes float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-14px); }
-  }
-
-  /* ============ SECCIONES GENERALES ============ */
-  section {
-    padding: 70px 24px;
-  }
-
-  .section-header {
-    text-align: center;
-    max-width: 700px;
-    margin: 0 auto 50px;
-  }
-
-  .section-header h2 {
-    font-size: 2.2rem;
-    font-weight: 800;
-    letter-spacing: -1px;
-    margin-bottom: 14px;
-  }
-
-  .section-header p {
-    color: var(--gris-medio);
-    font-size: 1.05rem;
-  }
-
-  .container {
-    max-width: 1200px;
-    margin: 0 auto;
-  }
-
-  /* ============ MAPA ============ */
-  #map {
-    height: 500px;
-    border-radius: var(--radio);
-    box-shadow: var(--sombra);
-    z-index: 1;
-  }
-
-  .map-wrapper {
-    position: relative;
-  }
-
-  .map-info-card {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    background: white;
-    padding: 18px 22px;
-    border-radius: var(--radio);
-    box-shadow: var(--sombra);
-    z-index: 500;
-    max-width: 260px;
-  }
-
-  .map-info-card h4 {
-    font-size: 0.95rem;
-    margin-bottom: 6px;
-    color: var(--verde-principal);
-  }
-
-  .map-info-card p {
-    font-size: 0.82rem;
-    color: var(--gris-medio);
-    margin-bottom: 12px;
-  }
-
-  .map-info-card button {
-    background: var(--verde-principal);
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 50px;
-    font-size: 0.82rem;
-    font-weight: 600;
-    cursor: pointer;
-    width: 100%;
-    transition: var(--transicion);
-  }
-
-  .map-info-card button:hover {
-    background: #1b5e20;
-  }
-
-  /* ============ CÓMO FUNCIONA ============ */
-  .steps-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 26px;
-  }
-
-  .step-card {
-    background: white;
-    padding: 34px 28px;
-    border-radius: var(--radio);
-    box-shadow: var(--sombra);
-    transition: var(--transicion);
-    position: relative;
-    overflow: hidden;
-  }
-
-  .step-card:hover {
-    transform: translateY(-6px);
-    box-shadow: 0 12px 34px rgba(0, 0, 0, 0.12);
-  }
-
-  .step-card .step-number {
-    position: absolute;
-    top: 18px;
-    right: 22px;
-    font-size: 3rem;
-    font-weight: 800;
-    color: var(--verde-suave);
-    line-height: 1;
-  }
-
-  .step-card .step-icon {
-    font-size: 2.4rem;
-    margin-bottom: 16px;
-    display: block;
-  }
-
-  .step-card h3 {
-    font-size: 1.15rem;
-    margin-bottom: 10px;
-    font-weight: 700;
-  }
-
-  .step-card p {
-    font-size: 0.92rem;
-    color: var(--gris-medio);
-  }
-
-  /* ============ BENEFICIOS ============ */
-  .benefits-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 26px;
-  }
-
-  .benefit-card {
-    background: white;
-    border-radius: var(--radio);
-    padding: 32px 28px;
-    box-shadow: var(--sombra);
-    border-left: 5px solid var(--verde-principal);
-    transition: var(--transicion);
-  }
-
-  .benefit-card:hover {
-    transform: translateX(6px);
-  }
-
-  .benefit-card .icon {
-    font-size: 2rem;
-    margin-bottom: 14px;
-    display: block;
-  }
-
-  .benefit-card h3 {
-    font-size: 1.1rem;
-    margin-bottom: 8px;
-  }
-
-  .benefit-card p {
-    font-size: 0.9rem;
-    color: var(--gris-medio);
-  }
-
-  /* ============ FORMULARIO ============ */
-  .form-section {
-    background: linear-gradient(135deg, var(--verde-principal), #1b5e20);
-    color: white;
-  }
-
-  .form-section .section-header h2,
-  .form-section .section-header p {
-    color: white;
-  }
-
-  .form-section .section-header p {
-    opacity: 0.85;
-  }
-
-  .form-card {
-    background: white;
-    border-radius: 20px;
-    padding: 40px;
-    max-width: 700px;
-    margin: 0 auto;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
-  }
-
-  .form-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 18px;
-  }
-
-  .form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  .form-group.full {
-    grid-column: 1 / -1;
-  }
-
-  .form-group label {
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--gris-oscuro);
-  }
-
-  .form-group input,
-  .form-group select,
-  .form-group textarea {
-    padding: 12px 16px;
-    border: 2px solid #e0e0e0;
-    border-radius: 10px;
-    font-size: 0.95rem;
-    font-family: inherit;
-    transition: var(--transicion);
-    background: var(--gris-claro);
-  }
-
-  .form-group input:focus,
-  .form-group select:focus,
-  .form-group textarea:focus {
-    outline: none;
-    border-color: var(--verde-principal);
-    background: white;
-  }
-
-  .form-group textarea {
-    resize: vertical;
-    min-height: 90px;
-  }
-
-  .btn-submit {
-    width: 100%;
-    background: var(--verde-principal);
-    color: white;
-    border: none;
-    padding: 16px;
-    border-radius: 50px;
-    font-size: 1rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: var(--transicion);
-    margin-top: 10px;
-  }
-
-  .btn-submit:hover {
-    background: #1b5e20;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(46, 125, 50, 0.4);
-  }
-
-  /* ============ TOAST ============ */
-  .toast {
-    position: fixed;
-    bottom: 30px;
-    left: 50%;
-    transform: translateX(-50%) translateY(120px);
-    background: var(--gris-oscuro);
-    color: white;
-    padding: 16px 28px;
-    border-radius: 50px;
-    font-weight: 600;
-    font-size: 0.95rem;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-    z-index: 9999;
-    transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .toast.show {
-    transform: translateX(-50%) translateY(0);
-  }
-
-  .toast.success {
-    background: var(--verde-principal);
-  }
-
-  /* ============ FOOTER ============ */
-  footer {
-    background: var(--gris-oscuro);
-    color: #bdbdbd;
-    padding: 50px 24px 30px;
-  }
-
-  .footer-content {
-    max-width: 1200px;
-    margin: 0 auto;
-    display: grid;
-    grid-template-columns: 2fr 1fr 1fr;
-    gap: 40px;
-    margin-bottom: 40px;
-  }
-
-  .footer-brand .logo {
-    color: white;
-    margin-bottom: 14px;
-  }
-
-  .footer-brand p {
-    font-size: 0.9rem;
-    max-width: 320px;
-    line-height: 1.7;
-  }
-
-  .footer-col h4 {
-    color: white;
-    font-size: 0.95rem;
-    margin-bottom: 16px;
-  }
-
-  .footer-col ul {
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .footer-col a {
-    color: #bdbdbd;
-    text-decoration: none;
-    font-size: 0.88rem;
-    transition: var(--transicion);
-  }
-
-  .footer-col a:hover {
-    color: var(--verde-claro);
-  }
-
-  .footer-bottom {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding-top: 24px;
-    border-top: 1px solid #333;
-    text-align: center;
-    font-size: 0.82rem;
-    color: #888;
-  }
-
-  /* ============ RESPONSIVE ============ */
-  @media (max-width: 900px) {
-    .hero {
-      grid-template-columns: 1fr;
-      padding-top: 40px;
-      gap: 30px;
-    }
-
-    .hero-text h1 {
-      font-size: 2.2rem;
-    }
-
-    .hero-illustration {
-      min-height: 240px;
-    }
-
-    .hero-illustration .emoji-big {
-      font-size: 5rem;
-    }
-
-    .nav-links {
-      display: none;
-    }
-
-    .footer-content {
-      grid-template-columns: 1fr;
-      gap: 30px;
-    }
-
-    .form-grid {
-      grid-template-columns: 1fr;
-    }
-
-    .map-info-card {
-      position: static;
-      max-width: 100%;
-      margin-top: 16px;
-    }
-
-    #map {
-      height: 380px;
-    }
-  }
-
-  @media (max-width: 480px) {
-    .hero-text h1 {
-      font-size: 1.8rem;
-    }
-
-    .section-header h2 {
-      font-size: 1.6rem;
-    }
-
-    .form-card {
-      padding: 26px 20px;
-    }
-  }
+/* ============================================================
+   Estilos — Red de Emergencia Offline
+   ============================================================ */
+:root {
+  --bg:        #0f172a;
+  --bg-soft:   #1e293b;
+  --panel:     #1a2332;
+  --border:    #334155;
+  --text:      #e2e8f0;
+  --text-dim:  #94a3b8;
+  --accent:    #38bdf8;
+  --crit:      #ef4444;
+  --warn:      #f97316;
+  --ok:        #22c55e;
+  --moderate:  #64748b;
+  --radius:    10px;
+  --shadow:    0 4px 14px rgba(0,0,0,.35);
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 16px; line-height: 1.45; min-height: 100%;
+}
+.app-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: .75rem 1rem;
+  background: linear-gradient(180deg, #111c33 0%, #0f172a 100%);
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 100;
+}
+.brand { display: flex; align-items: center; gap: .65rem; }
+.brand-icon { font-size: 1.6rem; }
+.brand h1 { font-size: 1.05rem; margin: 0; }
+.brand-sub { margin: 0; font-size: .75rem; color: var(--text-dim); }
+.conn-status {
+  display: flex; align-items: center; gap: .45rem;
+  font-size: .8rem; color: var(--text-dim);
+  background: var(--bg-soft); padding: .35rem .7rem;
+  border-radius: 999px; border: 1px solid var(--border);
+}
+.dot { width: 9px; height: 9px; border-radius: 50%; background: var(--moderate); }
+.dot--on { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+.dot--off { background: var(--moderate); }
+.app-shell { display: flex; min-height: calc(100vh - 62px); }
+.nav {
+  display: flex; flex-direction: column; gap: .25rem;
+  width: 220px; padding: 1rem .6rem;
+  background: var(--panel); border-right: 1px solid var(--border);
+  position: sticky; top: 62px; height: calc(100vh - 62px);
+  overflow-y: auto;
+}
+.nav-btn {
+  display: flex; align-items: center; gap: .7rem;
+  background: transparent; color: var(--text);
+  border: 1px solid transparent; border-radius: var(--radius);
+  padding: .65rem .8rem; font-size: .92rem; cursor: pointer;
+  text-align: left; transition: background .15s, border-color .15s;
+  font-family: inherit;
+}
+.nav-btn:hover { background: var(--bg-soft); }
+.nav-btn.is-active { background: var(--bg-soft); border-color: var(--accent); color: var(--accent); }
+.nav-ico { font-size: 1.15rem; }
+.main { flex: 1; padding: 1.2rem 1.5rem 3rem; min-width: 0; }
+.view { display: none; animation: fade .2s ease; }
+.view.is-active { display: block; }
+@keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.view-title { font-size: 1.35rem; margin: 0 0 1rem; }
+.section-title { font-size: 1.05rem; margin: 1.6rem 0 .7rem; color: var(--text-dim); }
+.stats-grid {
+  display: grid; gap: .8rem;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+}
+.stat {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: .9rem 1rem;
+  display: flex; flex-direction: column; gap: .15rem;
+}
+.stat--crit { border-color: var(--crit); }
+.stat-ico { font-size: 1.2rem; }
+.stat-value { font-size: 1.5rem; font-weight: 700; }
+.stat-label { font-size: .78rem; color: var(--text-dim); }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: .4rem; padding: .65rem 1rem; font-size: .92rem; font-weight: 600;
+  border-radius: var(--radius); border: 1px solid transparent;
+  cursor: pointer; transition: transform .05s, filter .15s; font-family: inherit;
+}
+.btn:active { transform: scale(.98); }
+.btn--crit { background: var(--crit); color: #fff; }
+.btn--warn { background: var(--warn); color: #111; }
+.btn--ghost { background: transparent; color: var(--text); border-color: var(--border); }
+.btn:hover { filter: brightness(1.08); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.quick-actions { display: flex; flex-wrap: wrap; gap: .6rem; margin: 1.2rem 0 .4rem; }
+.form { display: flex; flex-direction: column; gap: 1rem; max-width: 620px; }
+.field { display: flex; flex-direction: column; gap: .35rem; font-size: .88rem; }
+.field > span { color: var(--text-dim); }
+.field em { color: #64748b; font-style: normal; font-size: .78rem; }
+.field-hint { font-size: .75rem; color: var(--text-dim); }
+input, select, textarea {
+  background: var(--bg-soft); color: var(--text);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  padding: .65rem .75rem; font-family: inherit; font-size: .95rem; width: 100%;
+}
+input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.fieldset { border: 1px solid var(--border); border-radius: var(--radius); padding: .8rem; }
+.fieldset legend { color: var(--text-dim); font-size: .85rem; padding: 0 .4rem; }
+.chips { display: flex; flex-wrap: wrap; gap: .45rem; }
+.chip {
+  background: var(--bg-soft); border: 1px solid var(--border);
+  color: var(--text); border-radius: 999px;
+  padding: .45rem .85rem; font-size: .85rem; cursor: pointer; font-family: inherit;
+}
+.chip.is-on { background: var(--accent); color: #06121f; border-color: var(--accent); font-weight: 600; }
+.row { display: flex; gap: .5rem; }
+.form-actions { display: flex; gap: .6rem; flex-wrap: wrap; margin-top: .3rem; }
+.preview {
+  background: var(--bg-soft); border: 1px dashed var(--border);
+  border-radius: var(--radius); padding: .8rem 1rem;
+}
+.preview pre { margin: 0; font-size: .85rem; white-space: pre-wrap; }
+.disclaimer {
+  font-size: .78rem; color: var(--text-dim);
+  border-left: 3px solid var(--warn); padding-left: .6rem; margin-top: 1rem;
+}
+.report-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: .6rem; }
+.report-item {
+  background: var(--panel); border: 1px solid var(--border);
+  border-left-width: 5px; border-radius: var(--radius);
+  padding: .8rem 1rem; display: flex; flex-direction: column; gap: .35rem;
+}
+.report-item[data-prio="CRITICO"]  { border-left-color: var(--crit); }
+.report-item[data-prio="ALTO"]     { border-left-color: var(--warn); }
+.report-item[data-prio="MODERADO"] { border-left-color: var(--moderate); }
+.report-head { display: flex; justify-content: space-between; gap: .5rem; flex-wrap: wrap; }
+.report-type { font-weight: 600; }
+.report-meta { font-size: .74rem; color: var(--text-dim); }
+.report-content { font-size: .92rem; word-break: break-word; }
+.badge {
+  display: inline-block; font-size: .7rem; font-weight: 700;
+  padding: .15rem .5rem; border-radius: 999px;
+  background: var(--bg-soft); color: var(--text-dim); border: 1px solid var(--border);
+  margin-right: .3rem;
+}
+.badge--crit { background: var(--crit); color: #fff; border-color: var(--crit); }
+.badge--high { background: var(--warn); color: #111; border-color: var(--warn); }
+.badge--demo { background: #1e3a8a; color: #cfe3ff; border-color: #1e40af; }
+.badge--unverified { background: #422006; color: #fbbf24; border-color: #78350f; }
+.badge--verified   { background: #052e16; color: #4ade80; border-color: #166534; }
+.filters {
+  display: grid; grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: .5rem; margin-bottom: 1rem;
+}
+@media (max-width: 700px) {
+  .filters { grid-template-columns: 1fr 1fr; }
+  .filters input { grid-column: 1 / -1; }
+}
+.map { width: 100%; height: 420px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg-soft); }
+.admin-block { margin-bottom: 1.3rem; }
+.admin-block h3 { font-size: 1rem; margin: 0 0 .5rem; }
+.admin-block--danger { border: 1px solid var(--crit); border-radius: var(--radius); padding: .8rem; }
+.admin-block code { background: var(--bg-soft); padding: .25rem .5rem; border-radius: 6px; font-size: .85rem; }
+.test-list { font-size: .85rem; color: var(--text-dim); padding-left: 1.2rem; }
+.toast {
+  position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
+  background: var(--bg-soft); color: var(--text);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  padding: .7rem 1.1rem; font-size: .9rem; box-shadow: var(--shadow);
+  z-index: 999; max-width: 90vw;
+}
+.toast--ok  { border-color: var(--ok); }
+.toast--err { border-color: var(--crit); }
+.dialog {
+  border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--panel); color: var(--text); padding: 1.2rem;
+  max-width: 420px; width: 92vw;
+}
+.dialog h3 { margin: 0 0 .5rem; }
+.dialog menu { display: flex; gap: .6rem; justify-content: flex-end; padding: 0; margin: 1rem 0 0; }
+@media (max-width: 860px) {
+  .app-shell { flex-direction: column; }
+  .nav {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    flex-direction: row; width: 100%; height: 62px;
+    padding: .25rem; border-right: none; border-top: 1px solid var(--border);
+    justify-content: space-around; overflow: hidden; z-index: 200;
+  }
+  .nav-btn { flex-direction: column; gap: .1rem; font-size: .65rem; padding: .35rem .2rem; }
+  .nav-ico { font-size: 1.25rem; }
+  .main { padding: 1rem 1rem 5rem; }
+  .conn-status span:last-child { display: none; }
+}
 </style>
 </head>
 <body>
 
-<!-- ============ HEADER ============ -->
-<header>
-  <nav>
-    <div class="logo">
-      <span>♻️</span> EcoAceite
+<header class="app-header">
+  <div class="brand">
+    <span class="brand-icon" aria-hidden="true">🛟</span>
+    <div>
+      <h1>Red de Emergencia</h1>
+      <p class="brand-sub">Comunicación offline · store &amp; forward</p>
     </div>
-    <ul class="nav-links">
-      <li><a href="#mapa">Mapa</a></li>
-      <li><a href="#como-funciona">Cómo funciona</a></li>
-      <li><a href="#beneficios">Beneficios</a></li>
-      <li><a href="#registro">Registro</a></li>
-    </ul>
-    <button class="btn-cta" onclick="document.getElementById('registro').scrollIntoView()">
-      Únete ahora
-    </button>
-  </nav>
+  </div>
+  <div class="conn-status" id="connStatus" role="status" aria-live="polite">
+    <span class="dot dot--off" id="connDot"></span>
+    <span id="connText">Sin red de dispositivos</span>
+  </div>
 </header>
 
-<!-- ============ HERO ============ -->
-<section class="hero">
-  <div class="hero-text">
-    <h1>Convierte tu <em>aceite usado</em> en un recurso valioso</h1>
-    <p>
-      EcoAceite conecta hogares y restaurantes que generan aceite de cocina usado
-      con recolectores y empresas que lo transforman en biocombustibles y nuevos productos.
-      ¡Reciclar nunca fue tan fácil!
-    </p>
-    <div class="hero-buttons">
-      <button class="btn-primary" onclick="document.getElementById('mapa').scrollIntoView()">
-        📍 Ver puntos de recolección
-      </button>
-      <button class="btn-secondary" onclick="document.getElementById('registro').scrollIntoView()">
-        Quiero recolectar
-      </button>
-    </div>
-    <div class="stats">
-      <div class="stat-item">
-        <h3>1.2M</h3>
-        <p>Litros recuperados</p>
-      </div>
-      <div class="stat-item">
-        <h3>8,400+</h3>
-        <p>Hogares activos</p>
-      </div>
-      <div class="stat-item">
-        <h3>320</h3>
-        <p>Restaurantes aliados</p>
-      </div>
-    </div>
-  </div>
-  <div class="hero-illustration">
-    <div class="emoji-big">🛢️</div>
-  </div>
-</section>
+<div class="app-shell">
+  <nav class="nav" aria-label="Navegación principal">
+    <button class="nav-btn is-active" data-view="dashboard"><span class="nav-ico">🏠</span><span class="nav-lbl">Panel</span></button>
+    <button class="nav-btn" data-view="alert"><span class="nav-ico">🚨</span><span class="nav-lbl">Alerta</span></button>
+    <button class="nav-btn" data-view="reports"><span class="nav-ico">📋</span><span class="nav-lbl">Reportes</span></button>
+    <button class="nav-btn" data-view="community"><span class="nav-ico">📢</span><span class="nav-lbl">Avisos</span></button>
+    <button class="nav-btn" data-view="map"><span class="nav-ico">🗺️</span><span class="nav-lbl">Mapa</span></button>
+    <button class="nav-btn" data-view="admin"><span class="nav-ico">⚙️</span><span class="nav-lbl">Admin</span></button>
+  </nav>
 
-<!-- ============ MAPA ============ -->
-<section id="mapa" style="background: white;">
-  <div class="container">
-    <div class="section-header">
-      <h2>Puntos de recolección cercanos</h2>
-      <p>Encuentra el punto EcoAceite más próximo y deposita tu aceite usado de forma segura.</p>
-    </div>
-    <div class="map-wrapper">
-      <div id="map"></div>
-      <div class="map-info-card">
-        <h4>♻️ Puntos activos</h4>
-        <p id="puntosCount">Cargando puntos...</p>
-        <button onclick="centrarMapa()">Centrar mapa</button>
-      </div>
-    </div>
-  </div>
-</section>
+  <main class="main">
 
-<!-- ============ CÓMO FUNCIONA ============ -->
-<section id="como-funciona">
-  <div class="container">
-    <div class="section-header">
-      <h2>¿Cómo funciona EcoAceite?</h2>
-      <p>Cuatro pasos simples para transformar tu aceite usado en impacto positivo.</p>
-    </div>
-    <div class="steps-grid">
-      <div class="step-card">
-        <span class="step-number">01</span>
-        <span class="step-icon">📝</span>
-        <h3>Regístrate</h3>
-        <p>Crea tu cuenta como hogar, restaurante o recolector en menos de 2 minutos.</p>
+    <!-- ============ PANEL ============ -->
+    <section class="view is-active" id="view-dashboard">
+      <h2 class="view-title">Panel principal</h2>
+      <div class="stats-grid">
+        <article class="stat"><span class="stat-ico">📶</span><span class="stat-value" id="statConn">—</span><span class="stat-label">Estado de comunicación</span></article>
+        <article class="stat"><span class="stat-ico">💾</span><span class="stat-value" id="statStored">0</span><span class="stat-label">Mensajes almacenados</span></article>
+        <article class="stat stat--crit"><span class="stat-ico">🚨</span><span class="stat-value" id="statCritical">0</span><span class="stat-label">Alertas críticas pendientes</span></article>
+        <article class="stat"><span class="stat-ico">📥</span><span class="stat-value" id="statReceived">0</span><span class="stat-label">Recibidos de otros dispositivos</span></article>
+        <article class="stat"><span class="stat-ico">📱</span><span class="stat-value" id="statPeers">0</span><span class="stat-label">Dispositivos detectados</span></article>
+        <article class="stat"><span class="stat-ico">⏳</span><span class="stat-value" id="statPending">0</span><span class="stat-label">Pendientes de transmitir</span></article>
       </div>
-      <div class="step-card">
-        <span class="step-number">02</span>
-        <span class="step-icon">🛢️</span>
-        <h3>Almacena</h3>
-        <p>Guarda el aceite usado en una botella o recipiente limpio y bien cerrado.</p>
-      </div>
-      <div class="step-card">
-        <span class="step-number">03</span>
-        <span class="step-icon">📍</span>
-        <h3>Localiza</h3>
-        <p>Encuentra el punto de recolección más cercano en nuestro mapa interactivo.</p>
-      </div>
-      <div class="step-card">
-        <span class="step-number">04</span>
-        <span class="step-icon">🚚</span>
-        <h3>Entrega</h3>
-        <p>Lleva tu aceite o solicita recolección a domicilio. ¡Gana recompensas verdes!</p>
-      </div>
-    </div>
-  </div>
-</section>
 
-<!-- ============ BENEFICIOS ============ -->
-<section id="beneficios" style="background: white;">
-  <div class="container">
-    <div class="section-header">
-      <h2>Beneficios de reciclar aceite</h2>
-      <p>Un pequeño gesto que genera un gran impacto ambiental, económico y social.</p>
-    </div>
-    <div class="benefits-grid">
-      <div class="benefit-card">
-        <span class="icon">🌊</span>
-        <h3>Protege el agua</h3>
-        <p>Un litro de aceite puede contaminar hasta 1,000 litros de agua. Reciclarlo evita ese daño.</p>
+      <div class="quick-actions">
+        <button class="btn btn--crit" data-goto="alert">+ Generar alerta</button>
+        <button class="btn btn--ghost" data-goto="reports">Ver reportes</button>
+        <button class="btn btn--ghost" id="btnLoadDemo">Cargar datos demo</button>
       </div>
-      <div class="benefit-card">
-        <span class="icon">🌱</span>
-        <h3>Reduce emisiones</h3>
-        <p>El aceite reciclado se convierte en biocombustible, reduciendo gases de efecto invernadero.</p>
-      </div>
-      <div class="benefit-card">
-        <span class="icon">💰</span>
-        <h3>Genera ingresos</h3>
-        <p>Recibe recompensas económicas o descuentos por cada litro de aceite que entregues.</p>
-      </div>
-      <div class="benefit-card">
-        <span class="icon">🍳</span>
-        <h3>Nuevos productos</h3>
-        <p>El aceite reutilizado se transforma en jabones, velas, pinturas y biodiesel.</p>
-      </div>
-      <div class="benefit-card">
-        <span class="icon">🤝</span>
-        <h3>Comunidad</h3>
-        <p>Conecta con vecinos, recolectores y empresas comprometidas con el medio ambiente.</p>
-      </div>
-      <div class="benefit-card">
-        <span class="icon">🏙️</span>
-        <h3>Ciudades limpias</h3>
-        <p>Menos aceite en desagües significa menos obstrucciones y ciudades más saludables.</p>
-      </div>
-    </div>
-  </div>
-</section>
 
-<!-- ============ FORMULARIO ============ -->
-<section id="registro" class="form-section">
-  <div class="container">
-    <div class="section-header">
-      <h2>Únete a EcoAceite</h2>
-      <p>Registra tu hogar, restaurante o servicio de recolección y empieza a generar impacto.</p>
-    </div>
-    <div class="form-card">
-      <form id="registroForm">
-        <div class="form-grid">
-          <div class="form-group">
-            <label for="nombre">Nombre completo *</label>
-            <input type="text" id="nombre" required placeholder="Ej. María López" />
+      <h3 class="section-title">Últimos reportes</h3>
+      <ul class="report-list" id="recentReports"></ul>
+    </section>
+
+    <!-- ============ ALERTA ============ -->
+    <section class="view" id="view-alert">
+      <h2 class="view-title">Generar alerta de emergencia</h2>
+      <form id="alertForm" class="form" novalidate>
+        <fieldset class="fieldset">
+          <legend>Tipo de emergencia</legend>
+          <div class="chips" id="typeChips"></div>
+        </fieldset>
+
+        <label class="field">
+          <span>Descripción breve <em>(máx. 200)</em></span>
+          <textarea id="contentInput" maxlength="200" rows="3" placeholder="Ej: Persona herida cerca del centro educativo"></textarea>
+          <span class="field-hint" id="contentHint">0 / 200</span>
+        </label>
+
+        <label class="field">
+          <span>Nivel de prioridad</span>
+          <select id="priorityInput">
+            <option value="MODERADO">MODERADO — Suministros, rutas, avisos</option>
+            <option value="ALTO">ALTO — Heridos o peligro</option>
+            <option value="CRITICO">CRÍTICO — Riesgo inmediato para la vida</option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span>Ubicación (opcional)</span>
+          <div class="row">
+            <input type="text" id="locationInput" maxlength="80" placeholder="Referencia textual (ej: Refugio Escuela Central)" />
+            <button type="button" class="btn btn--ghost" id="btnGeoloc">📍 GPS</button>
           </div>
-          <div class="form-group">
-            <label for="email">Correo electrónico *</label>
-            <input type="email" id="email" required placeholder="tucorreo@ejemplo.com" />
-          </div>
-          <div class="form-group">
-            <label for="telefono">Teléfono *</label>
-            <input type="tel" id="telefono" required placeholder="+591 700 00000" />
-          </div>
-          <div class="form-group">
-            <label for="tipo">Tipo de usuario *</label>
-            <select id="tipo" required>
-              <option value="">Selecciona una opción</option>
-              <option value="hogar">🏠 Hogar</option>
-              <option value="restaurante">🍽️ Restaurante</option>
-              <option value="recolector">🚚 Recolector</option>
-              <option value="empresa">🏭 Empresa reutilizadora</option>
-            </select>
-          </div>
-          <div class="form-group full">
-            <label for="direccion">Dirección</label>
-            <input type="text" id="direccion" placeholder="Calle, número, ciudad" />
-          </div>
-          <div class="form-group full">
-            <label for="mensaje">Mensaje (opcional)</label>
-            <textarea id="mensaje" placeholder="Cuéntanos cuánto aceite generas aproximadamente..."></textarea>
-          </div>
+          <span class="field-hint" id="geoHint"></span>
+        </label>
+
+        <div class="preview" id="alertPreview" hidden>
+          <h4>Revisión antes de emitir</h4>
+          <pre id="previewBody"></pre>
         </div>
-        <button type="submit" class="btn-submit">Registrarme en EcoAceite ♻️</button>
+
+        <div class="form-actions">
+          <button type="button" class="btn btn--ghost" id="btnPreview">Previsualizar</button>
+          <button type="submit" class="btn btn--crit">Emitir alerta</button>
+        </div>
       </form>
-    </div>
-  </div>
-</section>
+      <p class="disclaimer">La clasificación por prioridad es un <strong>apoyo</strong> y no sustituye la evaluación de los equipos de emergencia.</p>
+    </section>
 
-<!-- ============ FOOTER ============ -->
-<footer>
-  <div class="footer-content">
-    <div class="footer-brand">
-      <div class="logo"><span>♻️</span> EcoAceite</div>
-      <p>Plataforma que conecta hogares, restaurantes, recolectores y empresas para dar una segunda vida al aceite de cocina usado.</p>
-    </div>
-    <div class="footer-col">
-      <h4>Plataforma</h4>
-      <ul>
-        <li><a href="#mapa">Mapa de puntos</a></li>
-        <li><a href="#como-funciona">Cómo funciona</a></li>
-        <li><a href="#beneficios">Beneficios</a></li>
-        <li><a href="#registro">Registro</a></li>
-      </ul>
-    </div>
-    <div class="footer-col">
-      <h4>Contacto</h4>
-      <ul>
-        <li><a href="mailto:hola@ecoaceite.org">hola@ecoaceite.org</a></li>
-        <li><a href="#">+591 700 00000</a></li>
-        <li><a href="#">Sucre, Bolivia</a></li>
-      </ul>
-    </div>
-  </div>
-  <div class="footer-bottom">
-    © 2025 EcoAceite. Hecho con 💚 para un planeta más limpio.
-  </div>
-</footer>
+    <!-- ============ REPORTES ============ -->
+    <section class="view" id="view-reports">
+      <h2 class="view-title">Control de mensajes</h2>
+      <div class="filters">
+        <input type="search" id="filterText" placeholder="Buscar texto…" />
+        <select id="filterPriority">
+          <option value="">Toda prioridad</option>
+          <option value="CRITICO">CRÍTICO</option>
+          <option value="ALTO">ALTO</option>
+          <option value="MODERADO">MODERADO</option>
+        </select>
+        <select id="filterStatus">
+          <option value="">Todo estado</option>
+          <option value="stored">Almacenado</option>
+          <option value="pending">Pendiente</option>
+          <option value="relayed">Retransmitido</option>
+          <option value="confirmed">Confirmado</option>
+          <option value="expired">Expirado</option>
+        </select>
+        <select id="sortBy">
+          <option value="priority">Ordenar: Prioridad</option>
+          <option value="date">Ordenar: Antigüedad</option>
+          <option value="type">Ordenar: Categoría</option>
+        </select>
+      </div>
+      <ul class="report-list report-list--full" id="allReports"></ul>
+    </section>
 
-<!-- Toast -->
-<div class="toast" id="toast">
-  <span id="toastIcon">✅</span>
-  <span id="toastMsg">Mensaje</span>
+    <!-- ============ AVISOS ============ -->
+    <section class="view" id="view-community">
+      <h2 class="view-title">Avisos comunitarios</h2>
+      <form id="noticeForm" class="form">
+        <label class="field">
+          <span>Tipo de aviso</span>
+          <select id="noticeType">
+            <option value="refugio">Refugio disponible</option>
+            <option value="asistencia">Punto de asistencia</option>
+            <option value="ruta">Ruta bloqueada</option>
+            <option value="agua">Disponibilidad de agua</option>
+            <option value="alimentos">Disponibilidad de alimentos</option>
+            <option value="evitar">Zona a evitar</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Descripción</span>
+          <textarea id="noticeContent" maxlength="160" rows="2" placeholder="Ej: Refugio con capacidad en Escuela Central"></textarea>
+        </label>
+        <label class="field">
+          <span>Caduca en (horas)</span>
+          <input type="number" id="noticeTtl" min="1" max="72" value="12" />
+        </label>
+        <div class="form-actions">
+          <button type="submit" class="btn btn--warn">Publicar aviso</button>
+        </div>
+      </form>
+      <ul class="report-list" id="noticeList"></ul>
+      <p class="disclaimer">Los avisos <strong>no verificados</strong> no deben tratarse como instrucciones oficiales de evacuación.</p>
+    </section>
+
+    <!-- ============ MAPA ============ -->
+    <section class="view" id="view-map">
+      <h2 class="view-title">Mapa de reportes</h2>
+      <div id="map" class="map" aria-label="Mapa de reportes"></div>
+      <p class="disclaimer" id="mapFallback" hidden>⚠️ El mapa no pudo cargarse (posiblemente sin conexión). Se muestra la lista de reportes con coordenadas.</p>
+      <ul class="report-list" id="mapList"></ul>
+    </section>
+
+    <!-- ============ ADMIN ============ -->
+    <section class="view" id="view-admin">
+      <h2 class="view-title">Administración</h2>
+
+      <div class="admin-block">
+        <h3>Mi identificador seudónimo</h3>
+        <code id="myOriginId">—</code>
+      </div>
+
+      <div class="admin-block">
+        <h3>Exportar datos</h3>
+        <button class="btn btn--ghost" id="btnExport">Descargar JSON</button>
+      </div>
+
+      <div class="admin-block">
+        <h3>Datos de demostración</h3>
+        <div class="row">
+          <button class="btn btn--ghost" id="btnLoadDemo2">Cargar demo</button>
+          <button class="btn btn--ghost" id="btnClearDemo">Eliminar demo</button>
+        </div>
+      </div>
+
+      <div class="admin-block admin-block--danger">
+        <h3>Zona peligrosa</h3>
+        <button class="btn btn--crit" id="btnWipe">Borrar todos los datos locales</button>
+      </div>
+
+      <div class="admin-block">
+        <h3>Privacidad</h3>
+        <p class="disclaimer">Todos los datos se almacenan <strong>únicamente en este navegador</strong> mediante IndexedDB. No se envían a ningún servidor. Si borras los datos del navegador, se eliminarán también los reportes.</p>
+      </div>
+
+      <div class="admin-block">
+        <h3>Pruebas de validación</h3>
+        <ol class="test-list">
+          <li>Registrar un reporte → aparece en “Reportes”.</li>
+          <li>Recargar la página → el reporte persiste (IndexedDB).</li>
+          <li>Crear 2 reportes con el mismo <code>messageId</code> → se detecta duplicado.</li>
+          <li>Crear un reporte con <code>expiresAt</code> en el pasado → se marca expirado.</li>
+          <li>Editar prioridad → el orden en la lista cambia.</li>
+          <li>Modo avión + recarga → la interfaz abre si el SW quedó registrado.</li>
+          <li>Denegar GPS → se puede seguir usando referencia textual.</li>
+          <li>Sin dispositivos → el estado muestra “Sin red de dispositivos”.</li>
+        </ol>
+      </div>
+    </section>
+
+  </main>
 </div>
 
-<!-- Leaflet JS -->
-<script
-  src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-  crossorigin=""
-></script>
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+<dialog id="confirmDialog" class="dialog">
+  <form method="dialog">
+    <h3 id="dlgTitle">Confirmar acción</h3>
+    <p id="dlgMsg"></p>
+    <menu>
+      <button value="cancel" class="btn btn--ghost">Cancelar</button>
+      <button value="ok" class="btn btn--crit" id="dlgOk">Confirmar</button>
+    </menu>
+  </form>
+</dialog>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+        crossorigin=""></script>
 
 <script>
 /* ============================================================
-   DATOS: Puntos de recolección (coordenadas enviadas)
+   Red de Emergencia Offline — lógica principal
    ============================================================ */
-const puntosRecoleccion = [
-  {
-    nombre: "Punto Centro Histórico",
-    coords: [-19.033295, -65.254140],
-    direccion: "Zona Centro, Sucre",
-    capacidad: "Alta"
-  },
-  {
-    nombre: "Punto Mercado Central",
-    coords: [-19.043923, -65.259429],
-    direccion: "Cercano al Mercado Central",
-    capacidad: "Media"
-  },
-  {
-    nombre: "Punto Plaza Principal",
-    coords: [-19.040054, -65.255234],
-    direccion: "Plaza 25 de Mayo",
-    capacidad: "Alta"
-  },
-  {
-    nombre: "Punto Zona Recoleta",
-    coords: [-19.046159, -65.245917],
-    direccion: "Zona Recoleta",
-    capacidad: "Media"
-  },
-  {
-    nombre: "Punto Zona Norte",
-    coords: [-19.032754, -65.262837],
-    direccion: "Zona Norte",
-    capacidad: "Baja"
-  },
-  {
-    nombre: "Punto Zona Sur",
-    coords: [-19.030441, -65.247935],
-    direccion: "Zona Sur",
-    capacidad: "Alta"
-  }
+
+/* ---------------- Utilidades ---------------- */
+const $  = (sel, root = document) => root.querySelector(sel);
+const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
+const uid = () => (crypto.randomUUID && crypto.randomUUID()) ||
+  'id-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
+const fmtDate = (iso) => { try { return new Date(iso).toLocaleString(); } catch { return iso; } };
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({
+  '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+}[c]));
+
+/* ---------------- Catálogo de tipos ---------------- */
+const TYPES = [
+  { id: 'herido',      label: 'Persona herida',           defaultPriority: 'ALTO'     },
+  { id: 'atrapado',    label: 'Persona atrapada',         defaultPriority: 'CRITICO'  },
+  { id: 'ayuda',       label: 'Necesito ayuda urgente',   defaultPriority: 'CRITICO'  },
+  { id: 'desaparecido',label: 'Persona desaparecida',     defaultPriority: 'ALTO'     },
+  { id: 'zona',        label: 'Zona peligrosa',           defaultPriority: 'ALTO'     },
+  { id: 'ruta',        label: 'Ruta bloqueada',           defaultPriority: 'MODERADO' },
+  { id: 'suministros', label: 'Falta de agua o alimentos',defaultPriority: 'MODERADO' },
+  { id: 'evacuacion',  label: 'Solicitud de evacuación',  defaultPriority: 'CRITICO'  },
+  { id: 'otro',        label: 'Otro tipo de emergencia',  defaultPriority: 'MODERADO' },
 ];
+const typeLabel = (id) => (TYPES.find(t => t.id === id)?.label) || id;
 
 /* ============================================================
-   INICIALIZACIÓN DEL MAPA
+   Store — IndexedDB
    ============================================================ */
-let map;
-let markers = [];
+const Store = (() => {
+  const DB_NAME = 'emergency-offline';
+  const DB_VERSION = 1;
+  let dbPromise = null;
 
-function initMap() {
-  // Centro promedio de las coordenadas
-  const centro = [-19.037, -65.254];
+  function open() {
+    if (dbPromise) return dbPromise;
+    dbPromise = new Promise((resolve, reject) => {
+      const req = indexedDB.open(DB_NAME, DB_VERSION);
+      req.onupgradeneeded = (e) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains('messages')) {
+          const s = db.createObjectStore('messages', { keyPath: 'messageId' });
+          s.createIndex('priority', 'priority');
+          s.createIndex('createdAt', 'createdAt');
+          s.createIndex('deliveryStatus', 'deliveryStatus');
+        }
+        if (!db.objectStoreNames.contains('notices')) {
+          db.createObjectStore('notices', { keyPath: 'noticeId' });
+        }
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+    return dbPromise;
+  }
 
-  map = L.map("map").setView(centro, 15);
+  async function store(name, mode = 'readonly') {
+    const db = await open();
+    return db.transaction(name, mode).objectStore(name);
+  }
 
-  // Capa de OpenStreetMap
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    maxZoom: 19,
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contribuidores'
-  }).addTo(map);
+  return {
+    async putMessage(m) {
+      const s = await store('messages', 'readwrite');
+      return new Promise((res, rej) => {
+        const r = s.put(m); r.onsuccess = () => res(m); r.onerror = () => rej(r.error);
+      });
+    },
+    async getMessage(id) {
+      const s = await store('messages');
+      return new Promise((res, rej) => {
+        const r = s.get(id); r.onsuccess = () => res(r.result || null); r.onerror = () => rej(r.error);
+      });
+    },
+    async allMessages() {
+      const s = await store('messages');
+      return new Promise((res, rej) => {
+        const r = s.getAll(); r.onsuccess = () => res(r.result || []); r.onerror = () => rej(r.error);
+      });
+    },
+    async deleteMessage(id) {
+      const s = await store('messages', 'readwrite');
+      return new Promise((res, rej) => {
+        const r = s.delete(id); r.onsuccess = () => res(true); r.onerror = () => rej(r.error);
+      });
+    },
+    async clearMessages() {
+      const s = await store('messages', 'readwrite');
+      return new Promise((res, rej) => {
+        const r = s.clear(); r.onsuccess = () => res(true); r.onerror = () => rej(r.error);
+      });
+    },
+    async putNotice(n) {
+      const s = await store('notices', 'readwrite');
+      return new Promise((res, rej) => {
+        const r = s.put(n); r.onsuccess = () => res(n); r.onerror = () => rej(r.error);
+      });
+    },
+    async allNotices() {
+      const s = await store('notices');
+      return new Promise((res, rej) => {
+        const r = s.getAll(); r.onsuccess = () => res(r.result || []); r.onerror = () => rej(r.error);
+      });
+    },
+    async deleteNotice(id) {
+      const s = await store('notices', 'readwrite');
+      return new Promise((res, rej) => {
+        const r = s.delete(id); r.onsuccess = () => res(true); r.onerror = () => rej(r.error);
+      });
+    },
+    async clearNotices() {
+      const s = await store('notices', 'readwrite');
+      return new Promise((res, rej) => {
+        const r = s.clear(); r.onsuccess = () => res(true); r.onerror = () => rej(r.error);
+      });
+    },
+  };
+})();
 
-  // Icono personalizado verde
-  const iconoVerde = L.divIcon({
-    className: "custom-marker",
-    html: `
-      <div style="
-        background: #2e7d32;
-        width: 34px;
-        height: 34px;
-        border-radius: 50% 50% 50% 0;
-        transform: rotate(-45deg);
-        border: 3px solid white;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      ">
-        <span style="
-          transform: rotate(45deg);
-          font-size: 16px;
-        ">♻️</span>
-      </div>
-    `,
-    iconSize: [34, 34],
-    iconAnchor: [17, 34],
-    popupAnchor: [0, -34]
-  });
+/* ============================================================
+   Messages — modelo, validación, duplicados, expiración
+   ============================================================ */
+const Messages = (() => {
+  const MAX_HOPS       = 5;              // límite de retransmisiones
+  const DEFAULT_TTL_MS = 1000 * 60 * 60 * 24; // 24 h por defecto
 
-  // Agregar marcadores
-  puntosRecoleccion.forEach((punto, index) => {
-    const marker = L.marker(punto.coords, { icon: iconoVerde }).addTo(map);
+  function validate(raw) {
+    const errors = [];
+    if (!raw || typeof raw !== 'object') errors.push('mensaje no es objeto');
+    if (!raw.messageId || typeof raw.messageId !== 'string') errors.push('messageId inválido');
+    if (!raw.originId  || typeof raw.originId  !== 'string') errors.push('originId inválido');
+    if (!raw.createdAt || isNaN(Date.parse(raw.createdAt))) errors.push('createdAt inválido');
+    if (!['CRITICO','ALTO','MODERADO'].includes(raw.priority)) errors.push('priority inválida');
+    if (typeof raw.content !== 'string' || raw.content.length > 200) errors.push('content inválido');
+    if (typeof raw.hopCount !== 'number') errors.push('hopCount inválido');
+    return errors;
+  }
 
-    marker.bindPopup(`
-      <div style="font-family: 'Segoe UI', sans-serif; min-width: 200px;">
-        <h3 style="margin: 0 0 8px; color: #2e7d32; font-size: 1rem;">${punto.nombre}</h3>
-        <p style="margin: 0 0 6px; font-size: 0.85rem; color: #555;">📍 ${punto.direccion}</p>
-        <p style="margin: 0 0 6px; font-size: 0.85rem; color: #555;">
-          <strong>Capacidad:</strong> ${punto.capacidad}
-        </p>
-        <p style="margin: 0; font-size: 0.8rem; color: #777;">
-          Lat: ${punto.coords[0].toFixed(6)}<br>
-          Lng: ${punto.coords[1].toFixed(6)}
-        </p>
-        <button
-          onclick="alert('¡Gracias por elegir ${punto.nombre}! Te esperamos.')"
-          style="
-            margin-top: 10px;
-            background: #2e7d32;
-            color: white;
-            border: none;
-            padding: 8px 14px;
-            border-radius: 50px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            cursor: pointer;
-            width: 100%;
-          ">
-          Quiero ir aquí
-        </button>
-      </div>
-    `);
+  function make({ type, content, priority, latitude, longitude, locationText, isDemo = false }) {
+    const now = new Date();
+    return {
+      messageId: uid(),
+      originId: getOriginId(),
+      createdAt: now.toISOString(),
+      priority,
+      messageType: type,
+      content: String(content || '').slice(0, 200),
+      latitude:  typeof latitude  === 'number' ? latitude  : null,
+      longitude: typeof longitude === 'number' ? longitude : null,
+      locationText: locationText ? String(locationText).slice(0, 80) : null,
+      hopCount: 0,
+      expiresAt: new Date(now.getTime() + DEFAULT_TTL_MS).toISOString(),
+      deliveryStatus: 'stored',
+      isDemo,
+      receivedFrom: null,
+    };
+  }
 
-    markers.push(marker);
-  });
+  async function save(msg) {
+    const errs = validate(msg);
+    if (errs.length) throw new Error('Mensaje inválido: ' + errs.join(', '));
+    const existing = await Store.getMessage(msg.messageId);
+    if (existing) return { duplicate: true, message: existing };
+    await Store.putMessage(msg);
+    return { duplicate: false, message: msg };
+  }
 
-  // Ajustar vista a todos los marcadores
-  const group = L.featureGroup(markers);
-  map.fitBounds(group.getBounds().pad(0.2));
+  async function markExpired() {
+    const all = await Store.allMessages();
+    const now = Date.now();
+    for (const m of all) {
+      if (m.deliveryStatus !== 'expired' && Date.parse(m.expiresAt) < now) {
+        m.deliveryStatus = 'expired';
+        await Store.putMessage(m);
+      }
+    }
+  }
 
-  // Contador de puntos
-  document.getElementById("puntosCount").textContent =
-    `${puntosRecoleccion.length} puntos activos disponibles`;
+  function canRelay(m) {
+    return m.hopCount < MAX_HOPS && m.deliveryStatus !== 'expired';
+  }
+
+  return { validate, make, save, markExpired, canRelay, MAX_HOPS, DEFAULT_TTL_MS };
+})();
+
+/* ---------------- Identidad seudónima ---------------- */
+function getOriginId() {
+  let id = localStorage.getItem('eo-origin');
+  if (!id) {
+    id = 'peer-' + Math.random().toString(36).slice(2, 8);
+    localStorage.setItem('eo-origin', id);
+  }
+  return id;
 }
 
 /* ============================================================
-   CENTRAR MAPA
+   Priority — orden y clasificación
    ============================================================ */
-function centrarMapa() {
-  if (markers.length > 0) {
-    const group = L.featureGroup(markers);
-    map.fitBounds(group.getBounds().pad(0.2));
+const Priority = (() => {
+  const rank = { CRITICO: 0, ALTO: 1, MODERADO: 2 };
+  function sort(list, by = 'priority') {
+    const arr = [...list];
+    if (by === 'date') return arr.sort((a,b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
+    if (by === 'type') return arr.sort((a,b) => a.messageType.localeCompare(b.messageType));
+    return arr.sort((a,b) => {
+      const d = rank[a.priority] - rank[b.priority];
+      return d !== 0 ? d : Date.parse(b.createdAt) - Date.parse(a.createdAt);
+    });
+  }
+  return { sort, rank };
+})();
+
+/* ============================================================
+   Location — GPS y referencia textual
+   ============================================================ */
+const Location = (() => {
+  let last = null;
+  function requestGPS() {
+    return new Promise((resolve, reject) => {
+      if (!('geolocation' in navigator)) return reject(new Error('Geolocalización no soportada'));
+      navigator.geolocation.getCurrentPosition(
+        (pos) => { last = { lat: pos.coords.latitude, lng: pos.coords.longitude }; resolve(last); },
+        (err) => reject(err),
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
+      );
+    });
+  }
+  return { requestGPS, last: () => last };
+})();
+
+/* ============================================================
+   CommAdapter — interfaz de transporte (NO implementado aún)
+   ------------------------------------------------------------
+   El navegador no ofrece Bluetooth mesh, Wi-Fi Direct ni BLE
+   central/peripheral universal. Este adaptador define la
+   interfaz que un módulo nativo (Capacitor / Web Bluetooth
+   experimental / Nearby Connections) debería implementar.
+   ============================================================ */
+const CommAdapter = (() => {
+  const state = {
+    available: false,
+    reason: 'El navegador no expone Bluetooth mesh / Wi-Fi Direct ni retransmisión en segundo plano.',
+    peers: [],
+  };
+  return {
+    status: () => ({ ...state }),
+    /** Interfaz que debe implementar un módulo nativo. */
+    interface: {
+      async start()   { throw new Error('start() no implementado'); },
+      async stop()    { throw new Error('stop() no implementado'); },
+      async peers()   { return []; },
+      async send(msg) { throw new Error('send() no implementado'); },
+      onReceive(cb)   { /* pendiente */ },
+    },
+  };
+})();
+
+/* ============================================================
+   UI — toasts, confirmaciones, navegación
+   ============================================================ */
+const UI = (() => {
+  let toastTimer = null;
+  function toast(msg, kind = '') {
+    const el = $('#toast');
+    el.textContent = msg;
+    el.className = 'toast ' + (kind ? 'toast--' + kind : '');
+    el.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { el.hidden = true; }, 3200);
+  }
+  function confirm(msg, title = 'Confirmar acción') {
+    return new Promise((resolve) => {
+      const dlg = $('#confirmDialog');
+      $('#dlgTitle').textContent = title;
+      $('#dlgMsg').textContent = msg;
+      const ok = $('#dlgOk');
+      const onClose = () => {
+        dlg.removeEventListener('close', onClose);
+        ok.removeEventListener('click', onOk);
+        resolve(dlg.returnValue === 'ok');
+      };
+      const onOk = () => { dlg.returnValue = 'ok'; };
+      ok.addEventListener('click', onOk);
+      dlg.addEventListener('close', onClose);
+      dlg.returnValue = 'cancel';
+      dlg.showModal();
+    });
+  }
+  return { toast, confirm };
+})();
+
+/* ---------------- Navegación ---------------- */
+function switchView(name) {
+  $$('.view').forEach(v => v.classList.toggle('is-active', v.id === 'view-' + name));
+  $$('.nav-btn').forEach(b => b.classList.toggle('is-active', b.dataset.view === name));
+  if (name === 'map') setTimeout(initMap, 50);
+  if (name === 'reports') renderAllReports();
+  if (name === 'dashboard') renderDashboard();
+  if (name === 'community') renderNotices();
+  if (name === 'admin') renderAdmin();
+}
+
+/* ============================================================
+   Render — Dashboard
+   ============================================================ */
+async function renderDashboard() {
+  await Messages.markExpired();
+  const all = await Store.allMessages();
+  const pending = all.filter(m => m.deliveryStatus === 'stored' || m.deliveryStatus === 'pending');
+  const critical = all.filter(m => m.priority === 'CRITICO' && m.deliveryStatus !== 'expired');
+  const received = all.filter(m => !!m.receivedFrom);
+
+  $('#statConn').textContent = CommAdapter.status().available ? 'Activo' : 'Sin red';
+  $('#statStored').textContent = all.length;
+  $('#statCritical').textContent = critical.length;
+  $('#statReceived').textContent = received.length;
+  $('#statPeers').textContent = CommAdapter.status().peers.length;
+  $('#statPending').textContent = pending.length;
+
+  const recent = Priority.sort(all, 'date').slice(0, 5);
+  const ul = $('#recentReports');
+  ul.innerHTML = recent.length ? '' : '<li class="report-item">Sin reportes todavía.</li>';
+  recent.forEach(m => ul.appendChild(renderReportItem(m)));
+}
+
+/* ============================================================
+   Render — Lista de reportes
+   ============================================================ */
+function renderReportItem(m, opts = {}) {
+  const li = document.createElement('li');
+  li.className = 'report-item';
+  li.dataset.prio = m.priority;
+  li.dataset.id = m.messageId;
+
+  const prioBadge = m.priority === 'CRITICO' ? 'badge--crit'
+    : m.priority === 'ALTO' ? 'badge--high' : '';
+
+  const statusLabel = {
+    stored: 'Almacenado',
+    pending: 'Pendiente',
+    relayed: 'Retransmitido',
+    confirmed: 'Confirmado',
+    expired: 'Expirado',
+  }[m.deliveryStatus] || m.deliveryStatus;
+
+  const meta = [
+    `ID: ${esc(m.messageId.slice(0, 8))}…`,
+    `Origen: ${esc(m.originId)}`,
+    `Creado: ${fmtDate(m.createdAt)}`,
+    `Expira: ${fmtDate(m.expiresAt)}`,
+    `Saltos: ${m.hopCount}/${Messages.MAX_HOPS}`,
+    m.locationText ? `Lugar: ${esc(m.locationText)}` : null,
+    (m.latitude != null && m.longitude != null)
+      ? `GPS: ${m.latitude.toFixed(5)}, ${m.longitude.toFixed(5)}` : null,
+    m.receivedFrom ? `Recibido de: ${esc(m.receivedFrom)}` : null,
+  ].filter(Boolean).join(' · ');
+
+  li.innerHTML = `
+    <div class="report-head">
+      <div>
+        <div class="report-type">
+          ${esc(typeLabel(m.messageType))}
+          <span class="badge ${prioBadge}">${esc(m.priority)}</span>
+          ${m.isDemo ? '<span class="badge badge--demo">DEMO</span>' : ''}
+          <span class="badge">${esc(statusLabel)}</span>
+        </div>
+        <div class="report-meta">${meta}</div>
+      </div>
+    </div>
+    <div class="report-content">${esc(m.content) || '<em>(sin descripción)</em>'}</div>
+    <div class="form-actions">
+      ${opts.showDelete ? `<button class="btn btn--ghost" data-act="del" data-id="${esc(m.messageId)}">Eliminar</button>` : ''}
+    </div>
+  `;
+  return li;
+}
+
+async function renderAllReports() {
+  await Messages.markExpired();
+  const all = await Store.allMessages();
+
+  const q = $('#filterText').value.trim().toLowerCase();
+  const fp = $('#filterPriority').value;
+  const fs = $('#filterStatus').value;
+  const sortBy = $('#sortBy').value;
+
+  let list = all.filter(m => {
+    if (fp && m.priority !== fp) return false;
+    if (fs && m.deliveryStatus !== fs) return false;
+    if (q) {
+      const hay = (m.content + ' ' + typeLabel(m.messageType) + ' ' + (m.locationText || '')).toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+  list = Priority.sort(list, sortBy);
+
+  const ul = $('#allReports');
+  ul.innerHTML = list.length ? '' : '<li class="report-item">Ningún reporte coincide con los filtros.</li>';
+  list.forEach(m => ul.appendChild(renderReportItem(m, { showDelete: true })));
+}
+
+/* ============================================================
+   Render — Avisos comunitarios
+   ============================================================ */
+async function renderNotices() {
+  const list = await Store.allNotices();
+  const ul = $('#noticeList');
+  ul.innerHTML = list.length ? '' : '<li class="report-item">Sin avisos publicados.</li>';
+
+  const typeMap = {
+    refugio: 'Refugio', asistencia: 'Punto de asistencia',
+    ruta: 'Ruta bloqueada', agua: 'Agua', alimentos: 'Alimentos', evitar: 'Zona a evitar',
+  };
+
+  list.sort((a,b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
+  for (const n of list) {
+    const expired = Date.parse(n.expiresAt) < Date.now();
+    const li = document.createElement('li');
+    li.className = 'report-item';
+    li.dataset.prio = 'MODERADO';
+    li.innerHTML = `
+      <div class="report-head">
+        <div class="report-type">
+          ${esc(typeMap[n.type] || n.type)}
+          <span class="badge ${n.verified ? 'badge--verified' : 'badge--unverified'}">
+            ${n.verified ? 'Verificado' : 'No verificado'}
+          </span>
+          ${expired ? '<span class="badge badge--crit">Expirado</span>' : ''}
+        </div>
+        <div class="report-meta">Creado: ${fmtDate(n.createdAt)} · Caduca: ${fmtDate(n.expiresAt)}</div>
+      </div>
+      <div class="report-content">${esc(n.content)}</div>
+      <div class="form-actions">
+        <button class="btn btn--ghost" data-act="verify" data-id="${esc(n.noticeId)}">
+          ${n.verified ? 'Marcar como no verificado' : 'Marcar como verificado'}
+        </button>
+        <button class="btn btn--ghost" data-act="delNotice" data-id="${esc(n.noticeId)}">Eliminar</button>
+      </div>
+    `;
+    ul.appendChild(li);
   }
 }
 
 /* ============================================================
-   TOAST
+   Render — Admin
    ============================================================ */
-function mostrarToast(mensaje, tipo = "success") {
-  const toast = document.getElementById("toast");
-  const toastMsg = document.getElementById("toastMsg");
-  const toastIcon = document.getElementById("toastIcon");
-
-  toastMsg.textContent = mensaje;
-  toastIcon.textContent = tipo === "success" ? "✅" : "⚠️";
-  toast.className = `toast ${tipo} show`;
-
-  setTimeout(() => {
-    toast.classList.remove("show");
-  }, 3500);
+function renderAdmin() {
+  $('#myOriginId').textContent = getOriginId();
 }
 
 /* ============================================================
-   FORMULARIO
+   Formulario — Alertas
    ============================================================ */
-document.getElementById("registroForm").addEventListener("submit", function (e) {
+let selectedType = 'herido';
+function initAlertForm() {
+  const chips = $('#typeChips');
+  chips.innerHTML = '';
+  TYPES.forEach(t => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'chip' + (t.id === selectedType ? ' is-on' : '');
+    b.textContent = t.label;
+    b.dataset.id = t.id;
+    b.addEventListener('click', () => {
+      selectedType = t.id;
+      $$('.chip', chips).forEach(c => c.classList.toggle('is-on', c.dataset.id === t.id));
+      $('#priorityInput').value = t.defaultPriority;
+      updatePreview();
+    });
+    chips.appendChild(b);
+  });
+  $('#priorityInput').value = TYPES.find(t => t.id === selectedType).defaultPriority;
+
+  const ta = $('#contentInput');
+  ta.addEventListener('input', () => {
+    $('#contentHint').textContent = `${ta.value.length} / 200`;
+    updatePreview();
+  });
+  $('#priorityInput').addEventListener('change', updatePreview);
+  $('#locationInput').addEventListener('input', updatePreview);
+  $('#btnGeoloc').addEventListener('click', onGeoloc);
+  $('#btnPreview').addEventListener('click', () => {
+    updatePreview(true);
+    UI.toast('Revisa el contenido y confirma para emitir.', '');
+  });
+
+  $('#alertForm').addEventListener('submit', onSubmitAlert);
+}
+
+let draftGeo = { lat: null, lng: null };
+
+async function onGeoloc() {
+  $('#geoHint').textContent = 'Solicitando permiso…';
+  try {
+    const { lat, lng } = await Location.requestGPS();
+    draftGeo = { lat, lng };
+    $('#geoHint').textContent = `GPS: ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+    UI.toast('Ubicación GPS capturada.', 'ok');
+  } catch (e) {
+    $('#geoHint').textContent = 'No se pudo obtener GPS. Usa referencia textual.';
+    UI.toast('GPS no disponible. Escribe una referencia textual.', 'err');
+  }
+  updatePreview();
+}
+
+function updatePreview(force = false) {
+  const box = $('#alertPreview');
+  const body = $('#previewBody');
+  const data = {
+    tipo: typeLabel(selectedType),
+    descripcion: $('#contentInput').value.trim(),
+    prioridad: $('#priorityInput').value,
+    ubicacion: $('#locationInput').value.trim(),
+    gps: (draftGeo.lat != null)
+      ? `${draftGeo.lat.toFixed(5)}, ${draftGeo.lng.toFixed(5)}` : '(sin GPS)',
+  };
+  body.textContent =
+    `Tipo: ${data.tipo}\n` +
+    `Prioridad: ${data.prioridad}\n` +
+    `Descripción: ${data.descripcion || '(vacía)'}\n` +
+    `Lugar: ${data.ubicacion || '(sin referencia)'}\n` +
+    `GPS: ${data.gps}`;
+  if (force) box.hidden = false;
+}
+
+async function onSubmitAlert(e) {
   e.preventDefault();
+  const content = $('#contentInput').value.trim();
+  if (!content) { UI.toast('Escribe una descripción breve.', 'err'); return; }
 
-  const nombre = document.getElementById("nombre").value.trim();
-  const email = document.getElementById("email").value.trim();
-  const telefono = document.getElementById("telefono").value.trim();
-  const tipo = document.getElementById("tipo").value;
+  const priority = $('#priorityInput').value;
+  if (priority === 'CRITICO') {
+    const ok = await UI.confirm('Vas a emitir una alerta CRÍTICA. ¿Confirmas que la información es correcta?', 'Emitir alerta crítica');
+    if (!ok) return;
+  }
 
-  if (!nombre || !email || !telefono || !tipo) {
-    mostrarToast("Por favor completa todos los campos obligatorios.", "error");
+  const msg = Messages.make({
+    type: selectedType,
+    content,
+    priority,
+    latitude: draftGeo.lat,
+    longitude: draftGeo.lng,
+    locationText: $('#locationInput').value.trim() || null,
+  });
+
+  try {
+    const res = await Messages.save(msg);
+    if (res.duplicate) {
+      UI.toast('Este mensaje ya existía (mismo messageId).', 'err');
+    } else {
+      UI.toast('Alerta guardada localmente. Queda pendiente de transmisión.', 'ok');
+      $('#alertForm').reset();
+      $('#contentHint').textContent = '0 / 200';
+      $('#alertPreview').hidden = true;
+      draftGeo = { lat: null, lng: null };
+      $('#geoHint').textContent = '';
+      selectedType = 'herido';
+      initAlertForm();
+      renderDashboard();
+    }
+  } catch (err) {
+    UI.toast('Error al guardar: ' + err.message, 'err');
+  }
+}
+
+/* ============================================================
+   Formulario — Avisos comunitarios
+   ============================================================ */
+function initNoticeForm() {
+  $('#noticeForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const content = $('#noticeContent').value.trim();
+    if (!content) { UI.toast('Escribe una descripción del aviso.', 'err'); return; }
+    const type = $('#noticeType').value;
+    const ttlH = Math.max(1, Math.min(72, Number($('#noticeTtl').value) || 12));
+    const now = new Date();
+    const notice = {
+      noticeId: uid(),
+      type, content: content.slice(0, 160),
+      createdAt: now.toISOString(),
+      expiresAt: new Date(now.getTime() + ttlH * 3600 * 1000).toISOString(),
+      verified: false,
+      originId: getOriginId(),
+    };
+    await Store.putNotice(notice);
+    UI.toast('Aviso publicado (no verificado).', 'ok');
+    $('#noticeForm').reset();
+    $('#noticeTtl').value = 12;
+    renderNotices();
+  });
+}
+
+/* ============================================================
+   Mapa con Leaflet
+   ============================================================ */
+let mapInstance = null;
+let mapMarkers = [];
+async function initMap() {
+  const el = $('#map');
+  const fallback = $('#mapFallback');
+
+  if (typeof L === 'undefined') {
+    el.style.display = 'none';
+    fallback.hidden = false;
+    renderMapList();
     return;
   }
+  el.style.display = '';
+  fallback.hidden = true;
 
-  // Simulación de envío
-  mostrarToast(`¡Gracias, ${nombre}! Tu registro como ${tipo} fue exitoso.`);
+  if (!mapInstance) {
+    mapInstance = L.map('map').setView([14.6349, -90.5069], 12); // Guatemala por defecto (solo vista inicial)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors',
+    }).addTo(mapInstance);
+  }
 
-  this.reset();
+  mapMarkers.forEach(m => mapInstance.removeLayer(m));
+  mapMarkers = [];
 
-  // Scroll suave al mapa después de registrarse
-  setTimeout(() => {
-    document.getElementById("mapa").scrollIntoView({ behavior: "smooth" });
-  }, 1200);
-});
+  const all = await Store.allMessages();
+  const withGeo = all.filter(m => m.latitude != null && m.longitude != null);
+
+  withGeo.forEach(m => {
+    const color = m.priority === 'CRITICO' ? '#ef4444'
+      : m.priority === 'ALTO' ? '#f97316' : '#64748b';
+    const marker = L.circleMarker([m.latitude, m.longitude], {
+      radius: 9, color, fillColor: color, fillOpacity: .85, weight: 2,
+    }).addTo(mapInstance);
+    marker.bindPopup(
+      `<strong>${esc(typeLabel(m.messageType))}</strong> — ${esc(m.priority)}<br>` +
+      `${esc(m.content)}<br><small>${fmtDate(m.createdAt)}</small>`
+    );
+    mapMarkers.push(marker);
+  });
+
+  if (withGeo.length) {
+    const group = L.featureGroup(mapMarkers);
+    try { mapInstance.fitBounds(group.getBounds().pad(0.2)); } catch {}
+  }
+
+  renderMapList(withGeo);
+}
+
+function renderMapList(list) {
+  const ul = $('#mapList');
+  ul.innerHTML = '';
+  if (!list) {
+    Store.allMessages().then(all => {
+      const withGeo = all.filter(m => m.latitude != null && m.longitude != null);
+      renderMapList(withGeo);
+    });
+    return;
+  }
+  if (!list.length) {
+    ul.innerHTML = '<li class="report-item">Ningún reporte tiene coordenadas GPS.</li>';
+    return;
+  }
+  list.forEach(m => ul.appendChild(renderReportItem(m)));
+}
 
 /* ============================================================
-   INICIALIZAR TODO AL CARGAR
+   Datos de demostración
    ============================================================ */
-window.addEventListener("load", () => {
-  initMap();
-});
-</script>
+const DEMO_DATA = [
+  { type: 'herido',      content: 'Persona herida cerca del centro educativo',  priority: 'ALTO'     },
+  { type: 'ruta',        content: 'Ruta bloqueada por deslizamiento',           priority: 'MODERADO' },
+  { type: 'suministros', content: 'Se necesitan agua y suministros en el refugio', priority: 'MODERADO' },
+  { type: 'atrapado',    content: 'Persona atrapada en una vivienda',           priority: 'CRITICO'  },
+];
 
+async function loadDemo() {
+  for (const d of DEMO_DATA) {
+    const m = Messages.make({ ...d, isDemo: true });
+    await Messages.save(m);
+  }
+  UI.toast('Datos de demostración cargados.', 'ok');
+  renderDashboard();
+  renderAllReports();
+}
+
+async function clearDemo() {
+  const all = await Store.allMessages();
+  for (const m of all) if (m.isDemo) await Store.deleteMessage(m.messageId);
+  UI.toast('Datos de demostración eliminados.', 'ok');
+  renderDashboard();
+  renderAllReports();
+}
+
+async function wipeAll() {
+  const ok = await UI.confirm('Se eliminarán TODOS los reportes y avisos locales. ¿Continuar?', 'Borrar datos locales');
+  if (!ok) return;
+  await Store.clearMessages();
+  await Store.clearNotices();
+  UI.toast('Datos locales eliminados.', 'ok');
+  renderDashboard();
+  renderAllReports();
+  renderNotices();
+}
+
+/* ============================================================
+   Exportar JSON
+   ============================================================ */
+async function exportJSON() {
+  const messages = await Store.allMessages();
+  const notices = await Store.allNotices();
+  const payload = {
+    exportedAt: new Date().toISOString(),
+    originId: getOriginId(),
+    messages, notices,
+    note: 'Prototipo — datos locales, no hay transmisión real entre dispositivos.',
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `emergency-export-${Date.now()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  UI.toast('Exportación descargada.', 'ok');
+}
+
+/* ============================================================
+   Estado de conexión
+   ============================================================ */
+function updateConnStatus() {
+  const s = CommAdapter.status();
+  const dot = $('#connDot');
+  const txt = $('#connText');
+  if (s.available && s.peers.length) {
+    dot.className = 'dot dot--on';
+    txt.textContent = `${s.peers.length} dispositivo(s) cerca`;
+  } else if (s.available) {
+    dot.className = 'dot dot--off';
+    txt.textContent = 'Activo, sin dispositivos';
+  } else {
+    dot.className = 'dot dot--off';
+    txt.textContent = 'Sin red de dispositivos';
+  }
+}
+
+/* ============================================================
+   Eventos globales
+   ============================================================ */
+function bindGlobalEvents() {
+  document.body.addEventListener('click', async (e) => {
+    const navBtn = e.target.closest('.nav-btn');
+    if (navBtn) switchView(navBtn.dataset.view);
+
+    const goto = e.target.closest('[data-goto]');
+    if (goto) switchView(goto.dataset.goto);
+
+    const act = e.target.closest('[data-act]');
+    if (!act) return;
+    const id = act.dataset.id;
+
+    if (act.dataset.act === 'del') {
+      const ok = await UI.confirm('¿Eliminar este reporte local?', 'Eliminar reporte');
+      if (ok) { await Store.deleteMessage(id); UI.toast('Reporte eliminado.', 'ok');
+        renderDashboard(); renderAllReports(); }
+    }
+    if (act.dataset.act === 'delNotice') {
+      const ok = await UI.confirm('¿Eliminar este aviso?', 'Eliminar aviso');
+      if (ok) { await Store.deleteNotice(id); UI.toast('Aviso eliminado.', 'ok'); renderNotices(); }
+    }
+    if (act.dataset.act === 'verify') {
+      const list = await Store.allNotices();
+      const n = list.find(x => x.noticeId === id);
+      if (n) { n.verified = !n.verified; await Store.putNotice(n); renderNotices(); }
+    }
+  });
+
+  $('#btnLoadDemo')?.addEventListener('click', loadDemo);
+  $('#btnLoadDemo2')?.addEventListener('click', loadDemo);
+  $('#btnClearDemo')?.addEventListener('click', clearDemo);
+  $('#btnWipe')?.addEventListener('click', wipeAll);
+  $('#btnExport')?.addEventListener('click', exportJSON);
+
+  $('#filterText').addEventListener('input', renderAllReports);
+  $('#filterPriority').addEventListener('change', renderAllReports);
+  $('#filterStatus').addEventListener('change', renderAllReports);
+  $('#sortBy').addEventListener('change', renderAllReports);
+}
+
+/* ============================================================
+   Arranque
+   ============================================================ */
+async function boot() {
+  initAlertForm();
+  initNoticeForm();
+  bindGlobalEvents();
+  updateConnStatus();
+  await renderDashboard();
+  renderNotices();
+  renderAdmin();
+  console.info('[Red de Emergencia] Adaptador de comunicación:', CommAdapter.status());
+}
+
+document.addEventListener('DOMContentLoaded', boot);
+</script>
 </body>
 </html>
