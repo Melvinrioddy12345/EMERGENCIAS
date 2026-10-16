@@ -33,6 +33,7 @@
   --moderate:  #64748b;
   --radius:    10px;
   --shadow:    0 4px 14px rgba(0,0,0,.35);
+  --dock-h:    84px;
 }
 * { box-sizing: border-box; }
 html, body {
@@ -42,6 +43,8 @@ html, body {
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   font-size: 16px; line-height: 1.45; min-height: 100%;
 }
+
+/* --------- Header --------- */
 .app-header {
   display: flex; justify-content: space-between; align-items: center;
   padding: .75rem 1rem;
@@ -62,34 +65,42 @@ html, body {
 .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--moderate); }
 .dot--on { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
 .dot--off { background: var(--moderate); }
-.app-shell { display: flex; min-height: calc(100vh - 62px); }
-.nav {
-  display: flex; flex-direction: column; gap: .25rem;
-  width: 220px; padding: 1rem .6rem;
-  background: var(--panel); border-right: 1px solid var(--border);
-  position: sticky; top: 62px; height: calc(100vh - 62px);
-  overflow-y: auto;
+
+/* --------- Layout principal --------- */
+.main {
+  padding: 1.2rem 1.5rem calc(var(--dock-h) + 2rem);
+  max-width: 1100px; margin: 0 auto;
 }
-.nav-btn {
-  display: flex; align-items: center; gap: .7rem;
-  background: transparent; color: var(--text);
-  border: 1px solid transparent; border-radius: var(--radius);
-  padding: .65rem .8rem; font-size: .92rem; cursor: pointer;
-  text-align: left; transition: background .15s, border-color .15s;
-  font-family: inherit;
-}
-.nav-btn:hover { background: var(--bg-soft); }
-.nav-btn.is-active { background: var(--bg-soft); border-color: var(--accent); color: var(--accent); }
-.nav-ico { font-size: 1.15rem; }
-.main { flex: 1; padding: 1.2rem 1.5rem 3rem; min-width: 0; }
+
+/* --------- Vistas (módulos) --------- */
 .view { display: none; animation: fade .2s ease; }
 .view.is-active { display: block; }
 @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
-.view-title { font-size: 1.35rem; margin: 0 0 1rem; }
+.view-title { font-size: 1.35rem; margin: 0 0 .3rem; }
+.view-sub   { font-size: .85rem; color: var(--text-dim); margin: 0 0 1.2rem; }
 .section-title { font-size: 1.05rem; margin: 1.6rem 0 .7rem; color: var(--text-dim); }
+
+/* --------- Sub-pestañas dentro del módulo de Reporte y Alerta --------- */
+.subtabs {
+  display: flex; gap: .4rem; margin-bottom: 1.2rem;
+  border-bottom: 1px solid var(--border); padding-bottom: .5rem;
+  flex-wrap: wrap;
+}
+.subtab {
+  background: transparent; color: var(--text-dim);
+  border: 1px solid var(--border); border-radius: 999px;
+  padding: .45rem .9rem; font-size: .88rem; font-weight: 600;
+  cursor: pointer; font-family: inherit;
+  transition: background .15s, color .15s, border-color .15s;
+}
+.subtab:hover { background: var(--bg-soft); color: var(--text); }
+.subtab.is-on { background: var(--accent); color: #06121f; border-color: var(--accent); }
+
+/* --------- Stats --------- */
 .stats-grid {
   display: grid; gap: .8rem;
   grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  margin-bottom: 1rem;
 }
 .stat {
   background: var(--panel); border: 1px solid var(--border);
@@ -100,6 +111,8 @@ html, body {
 .stat-ico { font-size: 1.2rem; }
 .stat-value { font-size: 1.5rem; font-weight: 700; }
 .stat-label { font-size: .78rem; color: var(--text-dim); }
+
+/* --------- Botones --------- */
 .btn {
   display: inline-flex; align-items: center; justify-content: center;
   gap: .4rem; padding: .65rem 1rem; font-size: .92rem; font-weight: 600;
@@ -112,7 +125,9 @@ html, body {
 .btn--ghost { background: transparent; color: var(--text); border-color: var(--border); }
 .btn:hover { filter: brightness(1.08); }
 .btn:disabled { opacity: .5; cursor: not-allowed; }
-.quick-actions { display: flex; flex-wrap: wrap; gap: .6rem; margin: 1.2rem 0 .4rem; }
+.quick-actions { display: flex; flex-wrap: wrap; gap: .6rem; margin: 1rem 0 .4rem; }
+
+/* --------- Formularios --------- */
 .form { display: flex; flex-direction: column; gap: 1rem; max-width: 620px; }
 .field { display: flex; flex-direction: column; gap: .35rem; font-size: .88rem; }
 .field > span { color: var(--text-dim); }
@@ -144,6 +159,8 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); ou
   font-size: .78rem; color: var(--text-dim);
   border-left: 3px solid var(--warn); padding-left: .6rem; margin-top: 1rem;
 }
+
+/* --------- Listas --------- */
 .report-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: .6rem; }
 .report-item {
   background: var(--panel); border: 1px solid var(--border);
@@ -166,8 +183,8 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); ou
 .badge--crit { background: var(--crit); color: #fff; border-color: var(--crit); }
 .badge--high { background: var(--warn); color: #111; border-color: var(--warn); }
 .badge--demo { background: #1e3a8a; color: #cfe3ff; border-color: #1e40af; }
-.badge--unverified { background: #422006; color: #fbbf24; border-color: #78350f; }
-.badge--verified   { background: #052e16; color: #4ade80; border-color: #166534; }
+
+/* --------- Filtros --------- */
 .filters {
   display: grid; grid-template-columns: 2fr 1fr 1fr 1fr;
   gap: .5rem; margin-bottom: 1rem;
@@ -176,14 +193,13 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); ou
   .filters { grid-template-columns: 1fr 1fr; }
   .filters input { grid-column: 1 / -1; }
 }
-.map { width: 100%; height: 420px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg-soft); }
-.admin-block { margin-bottom: 1.3rem; }
-.admin-block h3 { font-size: 1rem; margin: 0 0 .5rem; }
-.admin-block--danger { border: 1px solid var(--crit); border-radius: var(--radius); padding: .8rem; }
-.admin-block code { background: var(--bg-soft); padding: .25rem .5rem; border-radius: 6px; font-size: .85rem; }
-.test-list { font-size: .85rem; color: var(--text-dim); padding-left: 1.2rem; }
+
+/* --------- Mapa --------- */
+.map { width: 100%; height: 460px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg-soft); }
+
+/* --------- Toasts --------- */
 .toast {
-  position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
+  position: fixed; bottom: calc(var(--dock-h) + 16px); left: 50%; transform: translateX(-50%);
   background: var(--bg-soft); color: var(--text);
   border: 1px solid var(--border); border-radius: var(--radius);
   padding: .7rem 1.1rem; font-size: .9rem; box-shadow: var(--shadow);
@@ -191,6 +207,8 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); ou
 }
 .toast--ok  { border-color: var(--ok); }
 .toast--err { border-color: var(--crit); }
+
+/* --------- Dialog --------- */
 .dialog {
   border: 1px solid var(--border); border-radius: var(--radius);
   background: var(--panel); color: var(--text); padding: 1.2rem;
@@ -198,18 +216,36 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); ou
 }
 .dialog h3 { margin: 0 0 .5rem; }
 .dialog menu { display: flex; gap: .6rem; justify-content: flex-end; padding: 0; margin: 1rem 0 0; }
-@media (max-width: 860px) {
-  .app-shell { flex-direction: column; }
-  .nav {
-    position: fixed; bottom: 0; left: 0; right: 0;
-    flex-direction: row; width: 100%; height: 62px;
-    padding: .25rem; border-right: none; border-top: 1px solid var(--border);
-    justify-content: space-around; overflow: hidden; z-index: 200;
-  }
-  .nav-btn { flex-direction: column; gap: .1rem; font-size: .65rem; padding: .35rem .2rem; }
-  .nav-ico { font-size: 1.25rem; }
-  .main { padding: 1rem 1rem 5rem; }
-  .conn-status span:last-child { display: none; }
+
+/* ============================================================
+   DOCK INFERIOR — dos únicos módulos
+   ============================================================ */
+.dock {
+  position: fixed; left: 0; right: 0; bottom: 0; height: var(--dock-h);
+  display: flex; justify-content: center; align-items: center; gap: .8rem;
+  padding: .55rem .9rem;
+  background: linear-gradient(180deg, rgba(15,23,42,.65) 0%, #0b1220 60%);
+  border-top: 1px solid var(--border);
+  backdrop-filter: blur(6px);
+  z-index: 300;
+}
+.dock-btn {
+  flex: 1; max-width: 340px; height: 100%;
+  display: flex; align-items: center; justify-content: center; gap: .7rem;
+  background: var(--panel); color: var(--text);
+  border: 1px solid var(--border); border-radius: 14px;
+  font-family: inherit; font-size: 1rem; font-weight: 700;
+  cursor: pointer; transition: transform .05s, border-color .15s, background .15s;
+  box-shadow: var(--shadow);
+}
+.dock-btn:hover { background: var(--bg-soft); }
+.dock-btn:active { transform: scale(.98); }
+.dock-btn.is-active { border-color: var(--accent); color: var(--accent); background: var(--bg-soft); }
+.dock-ico { font-size: 1.4rem; }
+
+@media (max-width: 480px) {
+  .dock-btn { font-size: .85rem; gap: .4rem; }
+  .dock-ico { font-size: 1.2rem; }
 }
 </style>
 </head>
@@ -229,43 +265,25 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); ou
   </div>
 </header>
 
-<div class="app-shell">
-  <nav class="nav" aria-label="Navegación principal">
-    <button class="nav-btn is-active" data-view="dashboard"><span class="nav-ico">🏠</span><span class="nav-lbl">Panel</span></button>
-    <button class="nav-btn" data-view="alert"><span class="nav-ico">🚨</span><span class="nav-lbl">Alerta</span></button>
-    <button class="nav-btn" data-view="reports"><span class="nav-ico">📋</span><span class="nav-lbl">Reportes</span></button>
-    <button class="nav-btn" data-view="community"><span class="nav-ico">📢</span><span class="nav-lbl">Avisos</span></button>
-    <button class="nav-btn" data-view="map"><span class="nav-ico">🗺️</span><span class="nav-lbl">Mapa</span></button>
-    <button class="nav-btn" data-view="admin"><span class="nav-ico">⚙️</span><span class="nav-lbl">Admin</span></button>
-  </nav>
+<main class="main">
 
-  <main class="main">
+  <!-- ============================================================
+       MÓDULO 1 — REPORTE Y ALERTA
+       ============================================================ -->
+  <section class="view is-active" id="view-report">
 
-    <!-- ============ PANEL ============ -->
-    <section class="view is-active" id="view-dashboard">
-      <h2 class="view-title">Panel principal</h2>
-      <div class="stats-grid">
-        <article class="stat"><span class="stat-ico">📶</span><span class="stat-value" id="statConn">—</span><span class="stat-label">Estado de comunicación</span></article>
-        <article class="stat"><span class="stat-ico">💾</span><span class="stat-value" id="statStored">0</span><span class="stat-label">Mensajes almacenados</span></article>
-        <article class="stat stat--crit"><span class="stat-ico">🚨</span><span class="stat-value" id="statCritical">0</span><span class="stat-label">Alertas críticas pendientes</span></article>
-        <article class="stat"><span class="stat-ico">📥</span><span class="stat-value" id="statReceived">0</span><span class="stat-label">Recibidos de otros dispositivos</span></article>
-        <article class="stat"><span class="stat-ico">📱</span><span class="stat-value" id="statPeers">0</span><span class="stat-label">Dispositivos detectados</span></article>
-        <article class="stat"><span class="stat-ico">⏳</span><span class="stat-value" id="statPending">0</span><span class="stat-label">Pendientes de transmitir</span></article>
-      </div>
+    <h2 class="view-title">Reporte y Alerta</h2>
+    <p class="view-sub">Genera alertas, consulta el estado de los mensajes y revisa su prioridad.</p>
 
-      <div class="quick-actions">
-        <button class="btn btn--crit" data-goto="alert">+ Generar alerta</button>
-        <button class="btn btn--ghost" data-goto="reports">Ver reportes</button>
-        <button class="btn btn--ghost" id="btnLoadDemo">Cargar datos demo</button>
-      </div>
+    <!-- Sub-pestañas internas -->
+    <nav class="subtabs" aria-label="Secciones del módulo">
+      <button class="subtab is-on" data-sub="new">Nueva alerta</button>
+      <button class="subtab" data-sub="list">Reportes</button>
+      <button class="subtab" data-sub="summary">Resumen</button>
+    </nav>
 
-      <h3 class="section-title">Últimos reportes</h3>
-      <ul class="report-list" id="recentReports"></ul>
-    </section>
-
-    <!-- ============ ALERTA ============ -->
-    <section class="view" id="view-alert">
-      <h2 class="view-title">Generar alerta de emergencia</h2>
+    <!-- ---------- Sub-vista: Nueva alerta ---------- -->
+    <div class="subview is-active" id="sub-new">
       <form id="alertForm" class="form" novalidate>
         <fieldset class="fieldset">
           <legend>Tipo de emergencia</legend>
@@ -307,11 +325,10 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); ou
         </div>
       </form>
       <p class="disclaimer">La clasificación por prioridad es un <strong>apoyo</strong> y no sustituye la evaluación de los equipos de emergencia.</p>
-    </section>
+    </div>
 
-    <!-- ============ REPORTES ============ -->
-    <section class="view" id="view-reports">
-      <h2 class="view-title">Control de mensajes</h2>
+    <!-- ---------- Sub-vista: Reportes ---------- -->
+    <div class="subview" id="sub-list">
       <div class="filters">
         <input type="search" id="filterText" placeholder="Buscar texto…" />
         <select id="filterPriority">
@@ -334,97 +351,60 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); ou
           <option value="type">Ordenar: Categoría</option>
         </select>
       </div>
-      <ul class="report-list report-list--full" id="allReports"></ul>
-    </section>
+      <ul class="report-list" id="allReports"></ul>
+    </div>
 
-    <!-- ============ AVISOS ============ -->
-    <section class="view" id="view-community">
-      <h2 class="view-title">Avisos comunitarios</h2>
-      <form id="noticeForm" class="form">
-        <label class="field">
-          <span>Tipo de aviso</span>
-          <select id="noticeType">
-            <option value="refugio">Refugio disponible</option>
-            <option value="asistencia">Punto de asistencia</option>
-            <option value="ruta">Ruta bloqueada</option>
-            <option value="agua">Disponibilidad de agua</option>
-            <option value="alimentos">Disponibilidad de alimentos</option>
-            <option value="evitar">Zona a evitar</option>
-          </select>
-        </label>
-        <label class="field">
-          <span>Descripción</span>
-          <textarea id="noticeContent" maxlength="160" rows="2" placeholder="Ej: Refugio con capacidad en Escuela Central"></textarea>
-        </label>
-        <label class="field">
-          <span>Caduca en (horas)</span>
-          <input type="number" id="noticeTtl" min="1" max="72" value="12" />
-        </label>
-        <div class="form-actions">
-          <button type="submit" class="btn btn--warn">Publicar aviso</button>
-        </div>
-      </form>
-      <ul class="report-list" id="noticeList"></ul>
-      <p class="disclaimer">Los avisos <strong>no verificados</strong> no deben tratarse como instrucciones oficiales de evacuación.</p>
-    </section>
-
-    <!-- ============ MAPA ============ -->
-    <section class="view" id="view-map">
-      <h2 class="view-title">Mapa de reportes</h2>
-      <div id="map" class="map" aria-label="Mapa de reportes"></div>
-      <p class="disclaimer" id="mapFallback" hidden>⚠️ El mapa no pudo cargarse (posiblemente sin conexión). Se muestra la lista de reportes con coordenadas.</p>
-      <ul class="report-list" id="mapList"></ul>
-    </section>
-
-    <!-- ============ ADMIN ============ -->
-    <section class="view" id="view-admin">
-      <h2 class="view-title">Administración</h2>
-
-      <div class="admin-block">
-        <h3>Mi identificador seudónimo</h3>
-        <code id="myOriginId">—</code>
+    <!-- ---------- Sub-vista: Resumen ---------- -->
+    <div class="subview" id="sub-summary">
+      <div class="stats-grid">
+        <article class="stat"><span class="stat-ico">📶</span><span class="stat-value" id="statConn">—</span><span class="stat-label">Estado de comunicación</span></article>
+        <article class="stat"><span class="stat-ico">💾</span><span class="stat-value" id="statStored">0</span><span class="stat-label">Mensajes almacenados</span></article>
+        <article class="stat stat--crit"><span class="stat-ico">🚨</span><span class="stat-value" id="statCritical">0</span><span class="stat-label">Alertas críticas pendientes</span></article>
+        <article class="stat"><span class="stat-ico">📥</span><span class="stat-value" id="statReceived">0</span><span class="stat-label">Recibidos de otros dispositivos</span></article>
+        <article class="stat"><span class="stat-ico">📱</span><span class="stat-value" id="statPeers">0</span><span class="stat-label">Dispositivos detectados</span></article>
+        <article class="stat"><span class="stat-ico">⏳</span><span class="stat-value" id="statPending">0</span><span class="stat-label">Pendientes de transmitir</span></article>
       </div>
 
-      <div class="admin-block">
-        <h3>Exportar datos</h3>
-        <button class="btn btn--ghost" id="btnExport">Descargar JSON</button>
+      <div class="quick-actions">
+        <button class="btn btn--ghost" id="btnLoadDemo">Cargar datos demo</button>
+        <button class="btn btn--ghost" id="btnExport">Exportar JSON</button>
       </div>
 
-      <div class="admin-block">
-        <h3>Datos de demostración</h3>
-        <div class="row">
-          <button class="btn btn--ghost" id="btnLoadDemo2">Cargar demo</button>
-          <button class="btn btn--ghost" id="btnClearDemo">Eliminar demo</button>
-        </div>
-      </div>
+      <h3 class="section-title">Últimos reportes</h3>
+      <ul class="report-list" id="recentReports"></ul>
+    </div>
 
-      <div class="admin-block admin-block--danger">
-        <h3>Zona peligrosa</h3>
-        <button class="btn btn--crit" id="btnWipe">Borrar todos los datos locales</button>
-      </div>
+  </section>
 
-      <div class="admin-block">
-        <h3>Privacidad</h3>
-        <p class="disclaimer">Todos los datos se almacenan <strong>únicamente en este navegador</strong> mediante IndexedDB. No se envían a ningún servidor. Si borras los datos del navegador, se eliminarán también los reportes.</p>
-      </div>
+  <!-- ============================================================
+       MÓDULO 2 — MAPAS
+       ============================================================ -->
+  <section class="view" id="view-map">
+    <h2 class="view-title">Mapas</h2>
+    <p class="view-sub">Ubicación de los reportes que tienen coordenadas GPS registradas.</p>
 
-      <div class="admin-block">
-        <h3>Pruebas de validación</h3>
-        <ol class="test-list">
-          <li>Registrar un reporte → aparece en “Reportes”.</li>
-          <li>Recargar la página → el reporte persiste (IndexedDB).</li>
-          <li>Crear 2 reportes con el mismo <code>messageId</code> → se detecta duplicado.</li>
-          <li>Crear un reporte con <code>expiresAt</code> en el pasado → se marca expirado.</li>
-          <li>Editar prioridad → el orden en la lista cambia.</li>
-          <li>Modo avión + recarga → la interfaz abre si el SW quedó registrado.</li>
-          <li>Denegar GPS → se puede seguir usando referencia textual.</li>
-          <li>Sin dispositivos → el estado muestra “Sin red de dispositivos”.</li>
-        </ol>
-      </div>
-    </section>
+    <div id="map" class="map" aria-label="Mapa de reportes"></div>
+    <p class="disclaimer" id="mapFallback" hidden>⚠️ El mapa no pudo cargarse (posiblemente sin conexión). Se muestra la lista de reportes con coordenadas.</p>
 
-  </main>
-</div>
+    <h3 class="section-title">Reportes con coordenadas</h3>
+    <ul class="report-list" id="mapList"></ul>
+  </section>
+
+</main>
+
+<!-- ============================================================
+     DOCK INFERIOR — dos módulos principales
+     ============================================================ -->
+<nav class="dock" aria-label="Módulos principales">
+  <button class="dock-btn is-active" id="dockReport" aria-label="Reporte y Alerta">
+    <span class="dock-ico">📋🚨</span>
+    <span>Reporte y Alerta</span>
+  </button>
+  <button class="dock-btn" id="dockMap" aria-label="Mapas">
+    <span class="dock-ico">🗺️</span>
+    <span>Mapas</span>
+  </button>
+</nav>
 
 <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
@@ -492,9 +472,6 @@ const Store = (() => {
           s.createIndex('createdAt', 'createdAt');
           s.createIndex('deliveryStatus', 'deliveryStatus');
         }
-        if (!db.objectStoreNames.contains('notices')) {
-          db.createObjectStore('notices', { keyPath: 'noticeId' });
-        }
       };
       req.onsuccess = () => resolve(req.result);
       req.onerror = () => reject(req.error);
@@ -532,36 +509,6 @@ const Store = (() => {
         const r = s.delete(id); r.onsuccess = () => res(true); r.onerror = () => rej(r.error);
       });
     },
-    async clearMessages() {
-      const s = await store('messages', 'readwrite');
-      return new Promise((res, rej) => {
-        const r = s.clear(); r.onsuccess = () => res(true); r.onerror = () => rej(r.error);
-      });
-    },
-    async putNotice(n) {
-      const s = await store('notices', 'readwrite');
-      return new Promise((res, rej) => {
-        const r = s.put(n); r.onsuccess = () => res(n); r.onerror = () => rej(r.error);
-      });
-    },
-    async allNotices() {
-      const s = await store('notices');
-      return new Promise((res, rej) => {
-        const r = s.getAll(); r.onsuccess = () => res(r.result || []); r.onerror = () => rej(r.error);
-      });
-    },
-    async deleteNotice(id) {
-      const s = await store('notices', 'readwrite');
-      return new Promise((res, rej) => {
-        const r = s.delete(id); r.onsuccess = () => res(true); r.onerror = () => rej(r.error);
-      });
-    },
-    async clearNotices() {
-      const s = await store('notices', 'readwrite');
-      return new Promise((res, rej) => {
-        const r = s.clear(); r.onsuccess = () => res(true); r.onerror = () => rej(r.error);
-      });
-    },
   };
 })();
 
@@ -569,8 +516,8 @@ const Store = (() => {
    Messages — modelo, validación, duplicados, expiración
    ============================================================ */
 const Messages = (() => {
-  const MAX_HOPS       = 5;              // límite de retransmisiones
-  const DEFAULT_TTL_MS = 1000 * 60 * 60 * 24; // 24 h por defecto
+  const MAX_HOPS       = 5;
+  const DEFAULT_TTL_MS = 1000 * 60 * 60 * 24;
 
   function validate(raw) {
     const errors = [];
@@ -624,9 +571,7 @@ const Messages = (() => {
     }
   }
 
-  function canRelay(m) {
-    return m.hopCount < MAX_HOPS && m.deliveryStatus !== 'expired';
-  }
+  function canRelay(m) { return m.hopCount < MAX_HOPS && m.deliveryStatus !== 'expired'; }
 
   return { validate, make, save, markExpired, canRelay, MAX_HOPS, DEFAULT_TTL_MS };
 })();
@@ -642,7 +587,7 @@ function getOriginId() {
 }
 
 /* ============================================================
-   Priority — orden y clasificación
+   Priority
    ============================================================ */
 const Priority = (() => {
   const rank = { CRITICO: 0, ALTO: 1, MODERADO: 2 };
@@ -659,7 +604,7 @@ const Priority = (() => {
 })();
 
 /* ============================================================
-   Location — GPS y referencia textual
+   Location
    ============================================================ */
 const Location = (() => {
   let last = null;
@@ -677,12 +622,7 @@ const Location = (() => {
 })();
 
 /* ============================================================
-   CommAdapter — interfaz de transporte (NO implementado aún)
-   ------------------------------------------------------------
-   El navegador no ofrece Bluetooth mesh, Wi-Fi Direct ni BLE
-   central/peripheral universal. Este adaptador define la
-   interfaz que un módulo nativo (Capacitor / Web Bluetooth
-   experimental / Nearby Connections) debería implementar.
+   CommAdapter — interfaz de transporte (no implementado aún)
    ============================================================ */
 const CommAdapter = (() => {
   const state = {
@@ -692,7 +632,6 @@ const CommAdapter = (() => {
   };
   return {
     status: () => ({ ...state }),
-    /** Interfaz que debe implementar un módulo nativo. */
     interface: {
       async start()   { throw new Error('start() no implementado'); },
       async stop()    { throw new Error('stop() no implementado'); },
@@ -704,7 +643,7 @@ const CommAdapter = (() => {
 })();
 
 /* ============================================================
-   UI — toasts, confirmaciones, navegación
+   UI — toasts, confirmaciones
    ============================================================ */
 const UI = (() => {
   let toastTimer = null;
@@ -737,21 +676,29 @@ const UI = (() => {
   return { toast, confirm };
 })();
 
-/* ---------------- Navegación ---------------- */
-function switchView(name) {
+/* ============================================================
+   Navegación principal — solo 2 módulos
+   ============================================================ */
+function switchModule(name) {
   $$('.view').forEach(v => v.classList.toggle('is-active', v.id === 'view-' + name));
-  $$('.nav-btn').forEach(b => b.classList.toggle('is-active', b.dataset.view === name));
+  $('#dockReport').classList.toggle('is-active', name === 'report');
+  $('#dockMap').classList.toggle('is-active', name === 'map');
   if (name === 'map') setTimeout(initMap, 50);
-  if (name === 'reports') renderAllReports();
-  if (name === 'dashboard') renderDashboard();
-  if (name === 'community') renderNotices();
-  if (name === 'admin') renderAdmin();
+  if (name === 'report') renderAllReports();
+}
+
+/* Sub-pestañas dentro del módulo Reporte y Alerta */
+function switchSub(name) {
+  $$('.subview').forEach(v => v.classList.toggle('is-active', v.id === 'sub-' + name));
+  $$('.subtab').forEach(t => t.classList.toggle('is-on', t.dataset.sub === name));
+  if (name === 'list') renderAllReports();
+  if (name === 'summary') renderSummary();
 }
 
 /* ============================================================
-   Render — Dashboard
+   Render — Resumen
    ============================================================ */
-async function renderDashboard() {
+async function renderSummary() {
   await Messages.markExpired();
   const all = await Store.allMessages();
   const pending = all.filter(m => m.deliveryStatus === 'stored' || m.deliveryStatus === 'pending');
@@ -846,55 +793,6 @@ async function renderAllReports() {
   const ul = $('#allReports');
   ul.innerHTML = list.length ? '' : '<li class="report-item">Ningún reporte coincide con los filtros.</li>';
   list.forEach(m => ul.appendChild(renderReportItem(m, { showDelete: true })));
-}
-
-/* ============================================================
-   Render — Avisos comunitarios
-   ============================================================ */
-async function renderNotices() {
-  const list = await Store.allNotices();
-  const ul = $('#noticeList');
-  ul.innerHTML = list.length ? '' : '<li class="report-item">Sin avisos publicados.</li>';
-
-  const typeMap = {
-    refugio: 'Refugio', asistencia: 'Punto de asistencia',
-    ruta: 'Ruta bloqueada', agua: 'Agua', alimentos: 'Alimentos', evitar: 'Zona a evitar',
-  };
-
-  list.sort((a,b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
-  for (const n of list) {
-    const expired = Date.parse(n.expiresAt) < Date.now();
-    const li = document.createElement('li');
-    li.className = 'report-item';
-    li.dataset.prio = 'MODERADO';
-    li.innerHTML = `
-      <div class="report-head">
-        <div class="report-type">
-          ${esc(typeMap[n.type] || n.type)}
-          <span class="badge ${n.verified ? 'badge--verified' : 'badge--unverified'}">
-            ${n.verified ? 'Verificado' : 'No verificado'}
-          </span>
-          ${expired ? '<span class="badge badge--crit">Expirado</span>' : ''}
-        </div>
-        <div class="report-meta">Creado: ${fmtDate(n.createdAt)} · Caduca: ${fmtDate(n.expiresAt)}</div>
-      </div>
-      <div class="report-content">${esc(n.content)}</div>
-      <div class="form-actions">
-        <button class="btn btn--ghost" data-act="verify" data-id="${esc(n.noticeId)}">
-          ${n.verified ? 'Marcar como no verificado' : 'Marcar como verificado'}
-        </button>
-        <button class="btn btn--ghost" data-act="delNotice" data-id="${esc(n.noticeId)}">Eliminar</button>
-      </div>
-    `;
-    ul.appendChild(li);
-  }
-}
-
-/* ============================================================
-   Render — Admin
-   ============================================================ */
-function renderAdmin() {
-  $('#myOriginId').textContent = getOriginId();
 }
 
 /* ============================================================
@@ -1005,38 +903,11 @@ async function onSubmitAlert(e) {
       $('#geoHint').textContent = '';
       selectedType = 'herido';
       initAlertForm();
-      renderDashboard();
+      renderSummary();
     }
   } catch (err) {
     UI.toast('Error al guardar: ' + err.message, 'err');
   }
-}
-
-/* ============================================================
-   Formulario — Avisos comunitarios
-   ============================================================ */
-function initNoticeForm() {
-  $('#noticeForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const content = $('#noticeContent').value.trim();
-    if (!content) { UI.toast('Escribe una descripción del aviso.', 'err'); return; }
-    const type = $('#noticeType').value;
-    const ttlH = Math.max(1, Math.min(72, Number($('#noticeTtl').value) || 12));
-    const now = new Date();
-    const notice = {
-      noticeId: uid(),
-      type, content: content.slice(0, 160),
-      createdAt: now.toISOString(),
-      expiresAt: new Date(now.getTime() + ttlH * 3600 * 1000).toISOString(),
-      verified: false,
-      originId: getOriginId(),
-    };
-    await Store.putNotice(notice);
-    UI.toast('Aviso publicado (no verificado).', 'ok');
-    $('#noticeForm').reset();
-    $('#noticeTtl').value = 12;
-    renderNotices();
-  });
 }
 
 /* ============================================================
@@ -1058,7 +929,7 @@ async function initMap() {
   fallback.hidden = true;
 
   if (!mapInstance) {
-    mapInstance = L.map('map').setView([14.6349, -90.5069], 12); // Guatemala por defecto (solo vista inicial)
+    mapInstance = L.map('map').setView([14.6349, -90.5069], 12);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution: '&copy; OpenStreetMap contributors',
@@ -1113,10 +984,10 @@ function renderMapList(list) {
    Datos de demostración
    ============================================================ */
 const DEMO_DATA = [
-  { type: 'herido',      content: 'Persona herida cerca del centro educativo',  priority: 'ALTO'     },
-  { type: 'ruta',        content: 'Ruta bloqueada por deslizamiento',           priority: 'MODERADO' },
+  { type: 'herido',      content: 'Persona herida cerca del centro educativo',     priority: 'ALTO'     },
+  { type: 'ruta',        content: 'Ruta bloqueada por deslizamiento',              priority: 'MODERADO' },
   { type: 'suministros', content: 'Se necesitan agua y suministros en el refugio', priority: 'MODERADO' },
-  { type: 'atrapado',    content: 'Persona atrapada en una vivienda',           priority: 'CRITICO'  },
+  { type: 'atrapado',    content: 'Persona atrapada en una vivienda',              priority: 'CRITICO'  },
 ];
 
 async function loadDemo() {
@@ -1125,27 +996,8 @@ async function loadDemo() {
     await Messages.save(m);
   }
   UI.toast('Datos de demostración cargados.', 'ok');
-  renderDashboard();
+  renderSummary();
   renderAllReports();
-}
-
-async function clearDemo() {
-  const all = await Store.allMessages();
-  for (const m of all) if (m.isDemo) await Store.deleteMessage(m.messageId);
-  UI.toast('Datos de demostración eliminados.', 'ok');
-  renderDashboard();
-  renderAllReports();
-}
-
-async function wipeAll() {
-  const ok = await UI.confirm('Se eliminarán TODOS los reportes y avisos locales. ¿Continuar?', 'Borrar datos locales');
-  if (!ok) return;
-  await Store.clearMessages();
-  await Store.clearNotices();
-  UI.toast('Datos locales eliminados.', 'ok');
-  renderDashboard();
-  renderAllReports();
-  renderNotices();
 }
 
 /* ============================================================
@@ -1153,11 +1005,10 @@ async function wipeAll() {
    ============================================================ */
 async function exportJSON() {
   const messages = await Store.allMessages();
-  const notices = await Store.allNotices();
   const payload = {
     exportedAt: new Date().toISOString(),
     originId: getOriginId(),
-    messages, notices,
+    messages,
     note: 'Prototipo — datos locales, no hay transmisión real entre dispositivos.',
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
@@ -1193,37 +1044,28 @@ function updateConnStatus() {
    Eventos globales
    ============================================================ */
 function bindGlobalEvents() {
+  // Dock inferior → cambiar de módulo
+  $('#dockReport').addEventListener('click', () => switchModule('report'));
+  $('#dockMap').addEventListener('click', () => switchModule('map'));
+
+  // Sub-pestañas internas
+  $$('.subtab').forEach(t =>
+    t.addEventListener('click', () => switchSub(t.dataset.sub))
+  );
+
+  // Acciones dentro de las listas
   document.body.addEventListener('click', async (e) => {
-    const navBtn = e.target.closest('.nav-btn');
-    if (navBtn) switchView(navBtn.dataset.view);
-
-    const goto = e.target.closest('[data-goto]');
-    if (goto) switchView(goto.dataset.goto);
-
     const act = e.target.closest('[data-act]');
     if (!act) return;
     const id = act.dataset.id;
-
     if (act.dataset.act === 'del') {
       const ok = await UI.confirm('¿Eliminar este reporte local?', 'Eliminar reporte');
       if (ok) { await Store.deleteMessage(id); UI.toast('Reporte eliminado.', 'ok');
-        renderDashboard(); renderAllReports(); }
-    }
-    if (act.dataset.act === 'delNotice') {
-      const ok = await UI.confirm('¿Eliminar este aviso?', 'Eliminar aviso');
-      if (ok) { await Store.deleteNotice(id); UI.toast('Aviso eliminado.', 'ok'); renderNotices(); }
-    }
-    if (act.dataset.act === 'verify') {
-      const list = await Store.allNotices();
-      const n = list.find(x => x.noticeId === id);
-      if (n) { n.verified = !n.verified; await Store.putNotice(n); renderNotices(); }
+        renderSummary(); renderAllReports(); }
     }
   });
 
   $('#btnLoadDemo')?.addEventListener('click', loadDemo);
-  $('#btnLoadDemo2')?.addEventListener('click', loadDemo);
-  $('#btnClearDemo')?.addEventListener('click', clearDemo);
-  $('#btnWipe')?.addEventListener('click', wipeAll);
   $('#btnExport')?.addEventListener('click', exportJSON);
 
   $('#filterText').addEventListener('input', renderAllReports);
@@ -1237,12 +1079,10 @@ function bindGlobalEvents() {
    ============================================================ */
 async function boot() {
   initAlertForm();
-  initNoticeForm();
   bindGlobalEvents();
   updateConnStatus();
-  await renderDashboard();
-  renderNotices();
-  renderAdmin();
+  await renderSummary();
+  renderAllReports();
   console.info('[Red de Emergencia] Adaptador de comunicación:', CommAdapter.status());
 }
 
